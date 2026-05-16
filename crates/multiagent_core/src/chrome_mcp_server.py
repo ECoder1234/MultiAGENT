@@ -790,16 +790,22 @@ def tool_move_mouse(params):
     if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
         raise ValueError("x and y must be finite numbers")
     wait = require_bool(params, "waitForArrival", True)
-    result = chrome_request(
-        "moveMouse",
-        {
-            "tabId": tab_id,
-            "x": float(x),
-            "y": float(y),
-            "waitForArrival": wait,
-        },
-        timeout=5,
-    )
+    payload = {
+        "tabId": tab_id,
+        "x": float(x),
+        "y": float(y),
+        "waitForArrival": wait,
+    }
+    try:
+        result = chrome_request("moveMouse", payload, timeout=DEFAULT_REQUEST_TIMEOUT)
+    except TimeoutError:
+        LIFECYCLE.emit("cursor:timeout", data=payload)
+        return {
+            **payload,
+            "visible": None,
+            "timedOut": True,
+            "message": "The Chrome extension did not finish its cursor overlay request before the bridge timeout.",
+        }
     LIFECYCLE.emit("cursor:moved", data={"tabId": tab_id, "x": x, "y": y})
     return result or {"tabId": tab_id, "x": x, "y": y, "visible": True}
 
