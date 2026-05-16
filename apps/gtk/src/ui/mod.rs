@@ -303,6 +303,11 @@ pub fn build_ui(app: &adw::Application) {
         .default_width(1200)
         .default_height(780)
         .build();
+    std::mem::forget(app.hold());
+    window.connect_close_request(|window| {
+        window.set_visible(false);
+        gtk::glib::Propagation::Stop
+    });
     window.set_size_request(980, 620);
     if !gtk_supports_backdrop_filter() {
         window.add_css_class("no-backdrop-blur");

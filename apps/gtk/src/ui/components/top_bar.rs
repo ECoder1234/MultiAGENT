@@ -36,7 +36,7 @@ pub fn build_top_bar(
     close_button.set_has_frame(false);
     close_button.set_focus_on_click(false);
     close_button.set_valign(gtk::Align::Center);
-    close_button.set_tooltip_text(Some("Close Window"));
+    close_button.set_tooltip_text(Some("Hide to background"));
     let close_icon = gtk::Image::from_icon_name("x-symbolic");
     close_icon.add_css_class("top-window-close-icon");
     close_icon.set_widget_name("top-window-close-icon");

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 path = "packaging/shared/dev.multiagent.multiagent.metainfo.xml"
 tree = ET.parse(path)
@@ -40,6 +41,18 @@ if bad:
     print("All AppStream screenshot images must be direct HTTPS URLs:", file=sys.stderr)
     for url in bad:
         print(f"  {url}", file=sys.stderr)
+    sys.exit(1)
+
+manifest = Path("packaging/flatpak/dev.multiagent.multiagent.yml").read_text()
+if "type: dir" in manifest or "path: ../.." in manifest:
+    print(
+        "Flathub submission manifest must use a public source URL/tag, "
+        "not a local source directory.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+if "https://github.com/ECoder1234/MultiAGENT.git" not in manifest:
+    print("Flathub source URL is missing from the manifest.", file=sys.stderr)
     sys.exit(1)
 PY
 

@@ -42,16 +42,10 @@ modules:
       - install -Dm644 packaging/shared/dev.multiagent.multiagent.metainfo.xml /app/share/metainfo/dev.multiagent.multiagent.metainfo.xml
       - install -Dm644 icons/dev.multiagent.multiagent.svg /app/share/icons/hicolor/scalable/apps/dev.multiagent.multiagent.svg
     sources:
-      - type: dir
-        path: ../..
-        skip:
-          - .flatpak-builder
-          - .git
-          - AppDir
-          - build-dir
-          - dist
-          - repo
-          - target
+      - type: git
+        url: https://github.com/ECoder1234/MultiAGENT.git
+        tag: multiagent-v0.1.3
+        commit: 3fd221fe6dc4b6a921b8af1a2950eb497909fc33
       - type: file
         path: cargo-config.toml
         dest: .cargo

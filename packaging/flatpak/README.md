@@ -12,6 +12,8 @@ flatpak-builder --user --install-deps-from=flathub --force-clean build-dir packa
 
 Use `--user` for local testing so the build installs SDKs, runtimes, and test
 apps into the user Flatpak installation rather than the system installation.
+The checked-in manifest uses the public `multiagent-v0.1.3` GitHub source tag
+so the same file can be used for Flathub review.
 
 ## Flathub Lint
 
@@ -38,9 +40,9 @@ flatpak run --command=flatpak-builder-lint org.flatpak.Builder \
 ```
 
 The built repository linter also expects public AppStream screenshots mirrored
-into the OSTree repo. Before opening the Flathub submission, publish Linux
-window screenshots for the current UI on `multiagent.dev`, add them to
-`packaging/shared/dev.multiagent.multiagent.metainfo.xml`, and build with:
+into the OSTree repo. The current AppStream metadata points at the public
+GitHub-hosted screenshot asset. Rebuild screenshot metadata after replacing or
+adding screenshots with:
 
 ```bash
 scripts/add_flathub_screenshots.py \
@@ -57,8 +59,7 @@ flatpak run org.flatpak.Builder \
   --force-clean build-dir packaging/flatpak/dev.multiagent.multiagent.yml
 ```
 
-The submission preflight intentionally fails until those public screenshot URLs
-exist:
+Run the Flathub submission preflight with:
 
 ```bash
 scripts/validate_flathub_submission.sh
