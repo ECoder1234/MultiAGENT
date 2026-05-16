@@ -114,6 +114,22 @@ static void set_numeric_env(const char *name, long value) {
     set_env(name, buffer);
 }
 
+static char *runtime_cache_dir(void) {
+    const char *runtime_dir = getenv("XDG_RUNTIME_DIR");
+    if (runtime_dir != NULL && runtime_dir[0] != '\0') {
+        return path_join(runtime_dir, "/multiagent-appimage");
+    }
+
+    const char *tmpdir = getenv("TMPDIR");
+    if (tmpdir == NULL || tmpdir[0] == '\0') {
+        tmpdir = "/tmp";
+    }
+
+    char suffix[64];
+    snprintf(suffix, sizeof(suffix), "/multiagent-appimage-%ld", (long) getuid());
+    return path_join(tmpdir, suffix);
+}
+
 static int ensure_directory(const char *path, mode_t mode) {
     char *mutable = xstrdup(path);
     size_t len = strlen(mutable);
@@ -179,6 +195,94 @@ static int copy_file(const char *source, const char *destination, mode_t mode) {
     }
 
     return ok;
+}
+
+static int is_loader_cache_module_line(const char *line) {
+    return strncmp(line, "\"libpixbufloader-", strlen("\"libpixbufloader-")) == 0;
+}
+
+static int write_loader_cache_line(FILE *output, const char *line, const char *loader_dir) {
+    if (!is_loader_cache_module_line(line)) {
+        return fputs(line, output) == EOF ? -1 : 0;
+    }
+
+    const char *name_start = line + 1;
+    const char *name_end = strchr(name_start, '"');
+    if (name_end == NULL) {
+        return fputs(line, output) == EOF ? -1 : 0;
+    }
+
+    return fprintf(output, "\"%s/%.*s\"\n", loader_dir, (int) (name_end - name_start), name_start) < 0 ? -1 : 0;
+}
+
+static char *write_gdk_pixbuf_loader_cache(const char *appdir, const char *loader_dir) {
+    char *source = path_join(appdir, "/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache");
+    char *cache_dir = runtime_cache_dir();
+    char *destination = path_join(cache_dir, "/gdk-pixbuf-loaders.cache");
+    char *temporary = path_join(cache_dir, "/gdk-pixbuf-loaders.cache.tmp");
+    FILE *input = NULL;
+    FILE *output = NULL;
+    char *line = NULL;
+    size_t line_capacity = 0;
+    char *result = NULL;
+
+    if (ensure_directory(cache_dir, 0700) != 0) {
+        warn_message("AppRun: failed to create pixbuf cache directory at %s", cache_dir);
+        goto cleanup;
+    }
+
+    input = fopen(source, "rb");
+    if (input == NULL) {
+        warn_message("AppRun: failed to read pixbuf loader cache at %s", source);
+        goto cleanup;
+    }
+
+    output = fopen(temporary, "wb");
+    if (output == NULL) {
+        warn_message("AppRun: failed to write pixbuf loader cache at %s", temporary);
+        goto cleanup;
+    }
+
+    while (getline(&line, &line_capacity, input) >= 0) {
+        if (write_loader_cache_line(output, line, loader_dir) != 0) {
+            warn_message("AppRun: failed while writing pixbuf loader cache");
+            goto cleanup;
+        }
+    }
+
+    if (ferror(input)) {
+        warn_message("AppRun: failed while reading pixbuf loader cache");
+        goto cleanup;
+    }
+
+    if (fclose(output) != 0) {
+        output = NULL;
+        warn_message("AppRun: failed to flush pixbuf loader cache");
+        goto cleanup;
+    }
+    output = NULL;
+
+    if (rename(temporary, destination) != 0) {
+        warn_message("AppRun: failed to finalize pixbuf loader cache at %s", destination);
+        goto cleanup;
+    }
+
+    result = xstrdup(destination);
+
+cleanup:
+    free(line);
+    if (output != NULL) {
+        fclose(output);
+        unlink(temporary);
+    }
+    if (input != NULL) {
+        fclose(input);
+    }
+    free(temporary);
+    free(destination);
+    free(cache_dir);
+    free(source);
+    return result;
 }
 
 static int is_wayland_session(void) {
@@ -423,14 +527,18 @@ int main(int argc, char **argv) {
     }
 
     {
-        char *value = path_join(appdir, "/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders");
-        set_env("GDK_PIXBUF_MODULEDIR", value);
-        free(value);
-    }
-    {
-        char *value = path_join(appdir, "/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache");
-        set_env("GDK_PIXBUF_MODULE_FILE", value);
-        free(value);
+        char *loader_dir = path_join(appdir, "/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders");
+        char *loader_cache = write_gdk_pixbuf_loader_cache(appdir, loader_dir);
+        set_env("GDK_PIXBUF_MODULEDIR", loader_dir);
+        if (loader_cache != NULL) {
+            set_env("GDK_PIXBUF_MODULE_FILE", loader_cache);
+            free(loader_cache);
+        } else {
+            char *fallback = path_join(appdir, "/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache");
+            set_env("GDK_PIXBUF_MODULE_FILE", fallback);
+            free(fallback);
+        }
+        free(loader_dir);
     }
     {
         char *value = path_join(appdir, "/usr/lib/x86_64-linux-gnu/gio/modules");
