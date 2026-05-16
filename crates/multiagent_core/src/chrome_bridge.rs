@@ -9,9 +9,12 @@ use std::sync::atomic::{AtomicI64, Ordering};
 #[cfg(unix)]
 use std::sync::{Arc, Mutex, mpsc};
 #[cfg(unix)]
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 #[cfg(unix)]
-use std::{collections::HashMap, thread};
+use std::{
+    collections::{HashMap, VecDeque},
+    thread,
+};
 
 use serde_json::{Value, json};
 
@@ -352,7 +355,8 @@ fn chrome_mcp_config_json(server_path: &Path) -> String {
                 "command": "python3",
                 "args": [server_path.to_string_lossy().to_string()],
                 "env": {
-                    "MULTIAGENT_CHROME_BRIDGE_SOCKET": broker_socket_path().to_string_lossy().to_string()
+                    "MULTIAGENT_CHROME_BRIDGE_SOCKET": broker_socket_path().to_string_lossy().to_string(),
+                    "MULTIAGENT_CHROME_FEATURES": "core,tabs,history,downloads,cursor,cdp,lifecycle"
                 }
             }
         }
@@ -679,6 +683,8 @@ fn current_uid() -> u32 {
 }
 
 type PendingBrokerRequests = Arc<Mutex<HashMap<i64, mpsc::Sender<Value>>>>;
+type NativeNotifications = Arc<Mutex<VecDeque<Value>>>;
+const MAX_NATIVE_NOTIFICATIONS: usize = 512;
 
 fn run_native_host<R: Read, W: Write + Send + 'static>(
     mut reader: R,
@@ -686,7 +692,8 @@ fn run_native_host<R: Read, W: Write + Send + 'static>(
 ) -> Result<(), String> {
     let writer = Arc::new(Mutex::new(writer));
     let pending: PendingBrokerRequests = Arc::new(Mutex::new(HashMap::new()));
-    start_native_host_broker(writer.clone(), pending.clone());
+    let notifications: NativeNotifications = Arc::new(Mutex::new(VecDeque::new()));
+    start_native_host_broker(writer.clone(), pending.clone(), notifications.clone());
 
     loop {
         let mut length_header = [0_u8; 4];
@@ -707,7 +714,7 @@ fn run_native_host<R: Read, W: Write + Send + 'static>(
             .map_err(|err| format!("Could not read native message payload: {err}"))?;
         let message: Value = serde_json::from_slice(&payload)
             .map_err(|err| format!("Could not parse native message JSON: {err}"))?;
-        if let Some(response) = handle_native_host_message(message) {
+        if let Some(response) = handle_native_host_message(message, Some(&notifications)) {
             if response.get("method").is_none() && response.get("result").is_some()
                 || response.get("error").is_some()
             {
@@ -730,7 +737,10 @@ fn run_native_host<R: Read, W: Write + Send + 'static>(
     }
 }
 
-fn handle_native_host_message(message: Value) -> Option<Value> {
+fn handle_native_host_message(
+    message: Value,
+    notifications: Option<&NativeNotifications>,
+) -> Option<Value> {
     if message.get("method").is_none()
         && (message.get("result").is_some() || message.get("error").is_some())
     {
@@ -741,7 +751,10 @@ fn handle_native_host_message(message: Value) -> Option<Value> {
     let id = message.get("id").cloned();
     let Some(id) = id else {
         return match method {
-            "onCDPEvent" | "onDownloadChange" => None,
+            "onCDPEvent" | "onDownloadChange" => {
+                record_native_notification(notifications, method, message.get("params").cloned());
+                None
+            }
             _ => None,
         };
     };
@@ -763,10 +776,35 @@ fn handle_native_host_message(message: Value) -> Option<Value> {
     }
 }
 
+fn record_native_notification(
+    notifications: Option<&NativeNotifications>,
+    method: &str,
+    params: Option<Value>,
+) {
+    let Some(notifications) = notifications else {
+        return;
+    };
+    let received_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis())
+        .unwrap_or_default();
+    if let Ok(mut notifications) = notifications.lock() {
+        notifications.push_back(json!({
+            "method": method,
+            "params": params.unwrap_or_else(|| json!({})),
+            "receivedAt": received_at,
+        }));
+        while notifications.len() > MAX_NATIVE_NOTIFICATIONS {
+            notifications.pop_front();
+        }
+    }
+}
+
 #[cfg(unix)]
 fn start_native_host_broker<W: Write + Send + 'static>(
     writer: Arc<Mutex<W>>,
     pending: PendingBrokerRequests,
+    notifications: NativeNotifications,
 ) {
     let socket_path = broker_socket_path();
     let _ = fs::remove_file(&socket_path);
@@ -779,9 +817,10 @@ fn start_native_host_broker<W: Write + Send + 'static>(
         for stream in listener.incoming().flatten() {
             let writer = writer.clone();
             let pending = pending.clone();
+            let notifications = notifications.clone();
             let next_id = next_id.clone();
             thread::spawn(move || {
-                let _ = handle_broker_client(stream, writer, pending, next_id);
+                let _ = handle_broker_client(stream, writer, pending, notifications, next_id);
             });
         }
     });
@@ -791,6 +830,7 @@ fn start_native_host_broker<W: Write + Send + 'static>(
 fn start_native_host_broker<W: Write + Send + 'static>(
     _writer: Arc<Mutex<W>>,
     _pending: PendingBrokerRequests,
+    _notifications: NativeNotifications,
 ) {
 }
 
@@ -799,6 +839,7 @@ fn handle_broker_client<W: Write + Send + 'static>(
     mut stream: UnixStream,
     writer: Arc<Mutex<W>>,
     pending: PendingBrokerRequests,
+    notifications: NativeNotifications,
     next_id: Arc<AtomicI64>,
 ) -> Result<(), String> {
     let mut line = String::new();
@@ -817,6 +858,9 @@ fn handle_broker_client<W: Write + Send + 'static>(
         .and_then(Value::as_str)
         .ok_or_else(|| "Broker request missing method.".to_string())?;
     let params = request.get("params").cloned().unwrap_or_else(|| json!({}));
+    if method == "__multiagent_poll_notifications" {
+        return handle_notification_poll(stream, notifications, params);
+    }
     let id = next_id.fetch_add(1, Ordering::Relaxed);
     let native_request = json!({
         "jsonrpc": "2.0",
@@ -857,6 +901,52 @@ fn handle_broker_client<W: Write + Send + 'static>(
         .map_err(|err| format!("Could not write broker response: {err}"))
 }
 
+#[cfg(unix)]
+fn handle_notification_poll(
+    mut stream: UnixStream,
+    notifications: NativeNotifications,
+    params: Value,
+) -> Result<(), String> {
+    let limit = params
+        .get("limit")
+        .and_then(Value::as_u64)
+        .unwrap_or(100)
+        .clamp(1, MAX_NATIVE_NOTIFICATIONS as u64) as usize;
+    let kind = params
+        .get("kind")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let mut drained = Vec::new();
+    if let Ok(mut notifications) = notifications.lock() {
+        let mut kept = VecDeque::new();
+        while let Some(item) = notifications.pop_front() {
+            let matches_kind = kind
+                .as_deref()
+                .map(|kind| item.get("method").and_then(Value::as_str) == Some(kind))
+                .unwrap_or(true);
+            if matches_kind && drained.len() < limit {
+                drained.push(item);
+            } else {
+                kept.push_back(item);
+            }
+        }
+        *notifications = kept;
+    }
+    let payload = serde_json::to_string(&json!({
+        "jsonrpc": "2.0",
+        "id": null,
+        "result": {
+            "notifications": drained,
+        }
+    }))
+    .map_err(|err| format!("Could not serialize broker notification response: {err}"))?;
+    stream
+        .write_all(payload.as_bytes())
+        .and_then(|_| stream.write_all(b"\n"))
+        .and_then(|_| stream.flush())
+        .map_err(|err| format!("Could not write broker notification response: {err}"))
+}
+
 fn write_native_message<W: Write>(writer: &mut W, response: &Value) -> Result<(), String> {
     let payload = serde_json::to_vec(response)
         .map_err(|err| format!("Could not serialize native response: {err}"))?;
@@ -875,11 +965,14 @@ mod tests {
 
     #[test]
     fn native_host_responds_to_ping() {
-        let response = handle_native_host_message(json!({
-            "jsonrpc": "2.0",
-            "id": 7,
-            "method": "ping"
-        }))
+        let response = handle_native_host_message(
+            json!({
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "ping"
+            }),
+            None,
+        )
         .expect("ping should receive a response");
 
         assert_eq!(response["id"], json!(7));
@@ -889,22 +982,49 @@ mod tests {
     #[test]
     fn native_host_ignores_notifications() {
         assert!(
-            handle_native_host_message(json!({
-                "jsonrpc": "2.0",
-                "method": "onCDPEvent",
-                "params": {}
-            }))
+            handle_native_host_message(
+                json!({
+                    "jsonrpc": "2.0",
+                    "method": "onCDPEvent",
+                    "params": {}
+                }),
+                None
+            )
             .is_none()
         );
     }
 
     #[test]
+    fn native_host_records_notifications_when_store_is_available() {
+        let notifications: NativeNotifications = Arc::new(Mutex::new(VecDeque::new()));
+        assert!(
+            handle_native_host_message(
+                json!({
+                    "jsonrpc": "2.0",
+                    "method": "onDownloadChange",
+                    "params": {"id": "1", "status": "complete"}
+                }),
+                Some(&notifications)
+            )
+            .is_none()
+        );
+
+        let notifications = notifications.lock().expect("notifications lock");
+        assert_eq!(notifications.len(), 1);
+        assert_eq!(notifications[0]["method"], json!("onDownloadChange"));
+        assert_eq!(notifications[0]["params"]["status"], json!("complete"));
+    }
+
+    #[test]
     fn native_host_returns_method_not_found_for_unknown_requests() {
-        let response = handle_native_host_message(json!({
-            "jsonrpc": "2.0",
-            "id": "abc",
-            "method": "unknown"
-        }))
+        let response = handle_native_host_message(
+            json!({
+                "jsonrpc": "2.0",
+                "id": "abc",
+                "method": "unknown"
+            }),
+            None,
+        )
         .expect("unknown request should receive an error response");
 
         assert_eq!(response["id"], json!("abc"));
