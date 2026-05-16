@@ -3530,7 +3530,7 @@ impl OpenCodeAppServer {
         }
 
         Err(format!(
-            "OpenCode config key `{key_path}` is not supported from Enzim yet."
+            "OpenCode config key `{key_path}` is not supported from MultiAGENT yet."
         ))
     }
 

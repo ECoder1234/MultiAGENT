@@ -1,11 +1,10 @@
 .bottom-icon-button.bottom-remote-button.is-on {
-  color: alpha(#79a8eb, 0.98);
+  color: alpha(@accent_color, 0.98);
   opacity: 0.98;
 }
 
 .remote-mode-overlay {
-  background: alpha(#2a5ea8, 0.24);
-  backdrop-filter: blur(12px);
+  background: alpha(@accent_bg_color, 0.22);
 }
 
 .remote-mode-overlay-content {

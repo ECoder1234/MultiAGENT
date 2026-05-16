@@ -80,6 +80,8 @@ fn build_inner(
 
     let lower_content = gtk::Box::new(gtk::Orientation::Vertical, 10);
     lower_content.add_css_class("composer-floating-shell");
+    lower_content.set_hexpand(true);
+    lower_content.set_halign(gtk::Align::Fill);
 
     let (suggestion_row, suggestion_row_natural_width) = build_default_suggestion_row();
     lower_content.append(&suggestion_row);
@@ -173,11 +175,15 @@ fn build_inner(
     live_turn_status_revealer.set_child(Some(&live_turn_status_overlay));
 
     let composer_cluster = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    composer_cluster.set_hexpand(true);
+    composer_cluster.set_halign(gtk::Align::Fill);
     composer_cluster.append(&live_turn_status_revealer);
 
     let composer = gtk::Box::new(gtk::Orientation::Vertical, 8);
     composer.add_css_class("composer");
     composer.add_css_class("composer-floating");
+    composer.set_hexpand(true);
+    composer.set_halign(gtk::Align::Fill);
 
     let thread_lock_note = gtk::Label::new(None);
     thread_lock_note.add_css_class("composer-lock-note");
@@ -194,6 +200,7 @@ fn build_inner(
     input_scroll.set_has_frame(false);
     input_scroll.set_widget_name("composer-input-scroll");
     input_scroll.add_css_class("composer-input");
+    input_scroll.set_hexpand(true);
 
     let input_view = gtk::TextView::new();
     input_view.set_widget_name("composer-input-view");
@@ -425,9 +432,11 @@ fn build_inner(
     }
 
     let overlay = gtk::Overlay::new();
+    overlay.set_hexpand(true);
+    overlay.set_halign(gtk::Align::Fill);
     overlay.set_child(Some(&input_scroll));
 
-    const DEFAULT_COMPOSER_PLACEHOLDER: &str = "Ask anything, @ to add files, / for commands";
+    const DEFAULT_COMPOSER_PLACEHOLDER: &str = "Ask Codex, @chrome, @files, or /commands";
     const STEER_QUEUE_PLACEHOLDER: &str = "Press Shift+Enter to steer queued message";
 
     let placeholder = gtk::Label::new(Some(DEFAULT_COMPOSER_PLACEHOLDER));
@@ -1245,7 +1254,7 @@ fn build_inner(
 
     include!("build_body_send_section.rs");
 
-    composer.set_size_request(suggestion_row_natural_width, -1);
+    composer.set_size_request(suggestion_row_natural_width.min(560), -1);
     live_turn_status_overlay.set_size_request(-1, -1);
     live_turn_status_overlay.set_hexpand(true);
     composer.append(&controls);

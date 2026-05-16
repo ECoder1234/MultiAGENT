@@ -1,115 +1,54 @@
-# Enzim Coder
+# MultiAGENT
 
-> Enzim Coder is a GTK4/libadwaita desktop app for working with coding threads, workspaces, Git context, file browsing, and local agent sessions in one place.
+> MultiAGENT is a Linux-first GTK4/libadwaita desktop workspace for running coding agents, reviewing diffs, managing project sessions, and working with local runtime profiles from one glassy interface.
 
-Today it supports
-<img src="icons/provider_codex.svg" alt="Codex" width="14" height="14"> Codex and
-<img src="icons/provider_opencode.svg" alt="OpenCode" width="14" height="14"> OpenCode.
-<br>
-<sub>Soon: <img src="icons/provider_claude.svg" alt="Claude Code" width="13" height="13"> Claude Code, <img src="icons/provider_gemini.svg" alt="Google CLI" width="13" height="13"> Google CLI</sub>
+## Based On / Credits
 
-<p align="center">
-  <a href="screenshots/main.png"><img src="screenshots/main.png" alt="Main chat view" width="96%" /></a>
-</p>
-<table width="100%">
-  <tr>
-    <td align="center" width="33.33%">
-      <a href="screenshots/multiview.png"><img src="screenshots/multiview.png" alt="Multi-pane chat view" width="100%" /></a>
-    </td>
-    <td align="center" width="33.33%">
-      <a href="screenshots/worktree.png"><img src="screenshots/worktree.png" alt="Worktree and Git workflow" width="100%" /></a>
-    </td>
-    <td align="center" width="33.33%">
-      <a href="screenshots/remote.png"><img src="screenshots/remote.png" alt="Remote control and integrations" width="100%" /></a>
-    </td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Multi-chat view</sub></td>
-    <td align="center"><sub>Worktrees</sub></td>
-    <td align="center"><sub>Remote</sub></td>
-  </tr>
-</table>
+MultiAGENT is built on top of enzim-coder by enz1m, which serves as the source first iteration and main backbone of this project.
 
-## ✨ Features
+Source backbone: <https://github.com/enz1m/enzim-coder>
 
-<table width="100%">
-  <tr>
-    <td align="center" width="50%">💬 Persistent Threads</td>
-    <td align="center" width="50%">📁 Workspace-Scoped Chats</td>
-  </tr>
-  <tr>
-    <td align="center">👤 Multi-Profile Sessions</td>
-    <td align="center">🔄 Background Thread State</td>
-  </tr>
-  <tr>
-    <td align="center">🪟 Multi-Pane Chat View</td>
-    <td align="center">🌿 Built-in Git Tab</td>
-  </tr>
-  <tr>
-    <td align="center">📂 Built-in File Browser</td>
-    <td align="center">🔌 MCP and Skills UI</td>
-  </tr>
-  <tr>
-    <td align="center">🎨 Runtime Theming</td>
-    <td align="center">🗄️ Local SQLite Storage</td>
-  </tr>
-</table>
+## Highlights
 
-## 🚀 Getting Started
+- Glassy dark interface with compact project, session, and active-agent panels.
+- Multi-agent status panel with idle, running, and waiting indicators.
+- Agent output tabs for primary, review, and background streams.
+- Review tab for changed files, staged commits, pushes, and syntax-highlighted diffs.
+- Ctrl+K command palette for fast navigation and settings access.
+- Composer model selector, collaboration controls, file mentions, image attachments, and voice input.
+- Session token and estimated cost counter in the app chrome.
+- Settings panel with shortcuts, dark/light theme toggle, runtime configuration, and attribution.
+- Local SQLite storage, local runtime profiles, Git worktrees, restore previews, and browser integration.
 
-### 🧩 AppImage
+## Runtime Support
 
-Download the latest AppImage from the [GitHub Releases page](https://github.com/enz1m/enzim-coder/releases/latest).
+MultiAGENT can work with Codex and OpenCode runtimes. Settings also detects GitHub Copilot CLI so authentication can be prepared while full in-app adapter support evolves.
 
-Make it executable:
-
-```bash
-chmod +x EnzimCoder-*.AppImage
-```
-
-Run:
-
-```bash
-./EnzimCoder-*.AppImage
-```
-
-What the AppImage does:
-
-1. On first `./EnzimCoder-*.AppImage` launch, it creates a user-scoped `.desktop` entry and icon automatically.
-2. If you later move the AppImage to a different folder and run it again, that `.desktop` entry is updated to the new path automatically.
-3. AppImage builds should offer update notifications automatically from GitHub Releases.
-4. If the update prompt does not appear or the in-app update fails, download the latest release manually.
-
-### 📦 Flatpak
-
-Flatpak is coming soon.
-
-For now, use the AppImage release.
-
-## ⚙️ Runtime Requirements
-
-Enzim Coder currently supports either the Codex CLI or the OpenCode CLI on the machine.
-
-Install one or both:
+Install one or more supported CLIs:
 
 ```bash
 npm i -g @openai/codex
 curl -fsSL https://opencode.ai/install | bash
+sudo snap install copilot --classic
 ```
 
-You can then create Codex and OpenCode profiles inside the app and authenticate the runtime you want to use. If neither supported CLI is available, the app will prompt for installation in the UI.
+## Remote Mode
 
-## 🖥️ Platform
+Remote mode works over Discord DMs and Telegram bot chats. In the app, open Settings -> Remote, choose the provider, enter the bot token, then authenticate by sending the shown 6-digit code. The bottom-bar remote button toggles remote mode without blocking the local GUI.
+
+## Chrome Bridge
+
+The official Codex Chrome extension connects through the Chrome native messaging host named `com.openai.codexextension`. On Linux, open Settings -> Browser and use Enable Linux bridge to enable the bundled Chrome bridge configuration, install the native messaging manifest, and create MultiAGENT's native-host wrapper.
+
+## Platform
 
 - Linux desktop app
 - Rust `1.92`
 - GTK4 + libadwaita
-- GTK `4.21+` enables backdrop blur
-- older GTK builds fall back to a more opaque surface style automatically
+- GTK `4.14+`
+- No macOS-only APIs, Cocoa dependencies, or macOS window-control styling
 
-## 🛠️ Development
-
-### 🧱 Build From Source
+## Development
 
 System packages required:
 
@@ -129,19 +68,81 @@ cargo check --workspace
 Run the GTK app:
 
 ```bash
-cargo run -p enzimcoder-gtk --release
+cargo run -p multiagent-gtk --release
 ```
 
-For local testing with isolated app data:
+Run with isolated app data:
 
 ```bash
-ENZIMCODER_PROFILE_HOME_DIR=/path/to/testdir cargo run -p enzimcoder-gtk --release
+MULTIAGENT_PROFILE_HOME_DIR=/path/to/testdir cargo run -p multiagent-gtk --release
 ```
 
 Build the release binary used by packaging:
 
 ```bash
-cargo build -p enzimcoder-gtk --release --locked
+cargo build -p multiagent-gtk --release --locked
+```
+
+## Flatpak And Flathub
+
+The Flatpak manifest is Linux-first and does not install system packages. It
+targets the GNOME 50 runtime, builds Rust dependencies from a generated offline
+Cargo source manifest, installs only into `/app`, and keeps runtime filesystem
+access to the user's home directory instead of the whole host.
+
+Refresh the Cargo source manifest after dependency changes:
+
+```bash
+scripts/generate_flatpak_cargo_sources.py
+```
+
+Validate metadata without installing anything:
+
+```bash
+scripts/validate_flatpak_metadata.sh
+```
+
+Run the Flathub manifest linter with the local exception request file:
+
+```bash
+flatpak run --command=flatpak-builder-lint org.flatpak.Builder \
+  --exceptions \
+  --user-exceptions packaging/flatpak/flathub-lint-user-exceptions.json \
+  --exceptions-repo stable \
+  manifest packaging/flatpak/dev.multiagent.multiagent.yml
+```
+
+Build and test locally with user-scoped Flatpak state:
+
+```bash
+flatpak-builder --user --install-deps-from=flathub --force-clean build-dir packaging/flatpak/dev.multiagent.multiagent.yml
+flatpak-builder --user --install --force-clean build-dir packaging/flatpak/dev.multiagent.multiagent.yml
+flatpak run dev.multiagent.multiagent
+```
+
+The Flatpak app ID is `dev.multiagent.multiagent` and assumes the project can
+verify/control `multiagent.dev` for Flathub review. If that domain is not under
+project control, change the app ID before submission rather than shipping an
+unverifiable ID.
+
+Flathub will also require a case-by-case linter exception for home-project
+filesystem access and `flatpak-spawn` host CLI bridging. The exception request
+text is kept in `packaging/flatpak/flathub-exceptions.json`.
+
+Before opening the Flathub submission, publish current Linux window screenshots
+on the project site and add them to the AppStream metadata so Flathub can mirror
+them into the repository.
+
+```bash
+scripts/add_flathub_screenshots.py \
+  --size 1200x800 \
+  https://raw.githubusercontent.com/ECoder1234/multiagent-flathub-assets/766e775808480a3c9f01238b7ff854c398ac329b/screenshots/dev.multiagent.multiagent-main.png
+```
+
+Run the final submission preflight after the screenshot URLs are in place:
+
+```bash
+scripts/validate_flathub_submission.sh
 ```
 
 Build the AppImage:
@@ -150,18 +151,14 @@ Build the AppImage:
 scripts/build_appimage.sh
 ```
 
-## 🗂️ Project Layout
+## Project Layout
 
 - `apps/gtk/` GTK app crate
-- `crates/enzim_core/` shared core logic
-- `src/` shared app/service layer used by the platform apps
+- `crates/multiagent_core/` shared core logic
+- `src/` shared app/service layer used by platform apps
 - `packaging/` release packaging
 - `icons/` bundled icon subset used by the resource file
 
-## 📝 Notes
+## Status
 
-- The bundled icons are documented separately in [icons/README.md](icons/README.md).
-
-## 🚧 Status
-
-This project is still in active iteration.
+MultiAGENT is in active iteration.

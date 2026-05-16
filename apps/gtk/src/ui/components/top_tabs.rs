@@ -1,6 +1,9 @@
 use adw::prelude::*;
 
-pub fn build_top_tabs(stack: &adw::ViewStack) -> gtk::Box {
+pub fn build_top_tabs(
+    stack: &adw::ViewStack,
+    browser_split_toggle: Option<&gtk::ToggleButton>,
+) -> gtk::Box {
     let tabs = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     tabs.add_css_class("top-tabs");
     tabs.set_halign(gtk::Align::Center);
@@ -8,11 +11,13 @@ pub fn build_top_tabs(stack: &adw::ViewStack) -> gtk::Box {
 
     let chat = tab_button("chat-new-symbolic", "Chat");
     chat.add_css_class("top-tab-chat");
-    let git = tab_button("git-symbolic", "Git");
+    let browser = tab_button("web-browser-symbolic", "Browser");
+    browser.add_css_class("top-tab-browser");
+    let git = tab_button("git-symbolic", "Review");
     git.add_css_class("top-tab-git");
-    let files = tab_button("folder-silhouette-symbolic", "Files");
-    files.add_css_class("top-tab-files");
-    let buttons = vec![chat.clone(), git.clone(), files.clone()];
+    let actions = tab_button("terminal-symbolic", "Actions");
+    actions.add_css_class("top-tab-actions");
+    let buttons = vec![chat.clone(), browser.clone(), git.clone(), actions.clone()];
     set_active_tab(&buttons, 0);
 
     {
@@ -24,11 +29,26 @@ pub fn build_top_tabs(stack: &adw::ViewStack) -> gtk::Box {
         });
     }
 
-    {
+    if let Some(browser_split_toggle) = browser_split_toggle {
+        let toggle = browser_split_toggle.clone();
+        browser.connect_clicked(move |_| {
+            toggle.set_active(!toggle.is_active());
+        });
+        {
+            let browser = browser.clone();
+            browser_split_toggle.connect_toggled(move |toggle| {
+                if toggle.is_active() {
+                    browser.add_css_class("top-tab-split-open");
+                } else {
+                    browser.remove_css_class("top-tab-split-open");
+                }
+            });
+        }
+    } else {
         let stack = stack.clone();
         let buttons = buttons.clone();
-        git.connect_clicked(move |_| {
-            stack.set_visible_child_name("git");
+        browser.connect_clicked(move |_| {
+            stack.set_visible_child_name("browser");
             set_active_tab(&buttons, 1);
         });
     }
@@ -36,17 +56,28 @@ pub fn build_top_tabs(stack: &adw::ViewStack) -> gtk::Box {
     {
         let stack = stack.clone();
         let buttons = buttons.clone();
-        files.connect_clicked(move |_| {
-            stack.set_visible_child_name("files");
+        git.connect_clicked(move |_| {
+            stack.set_visible_child_name("git");
             set_active_tab(&buttons, 2);
+        });
+    }
+
+    {
+        let stack = stack.clone();
+        let buttons = buttons.clone();
+        actions.connect_clicked(move |_| {
+            stack.set_visible_child_name("actions");
+            set_active_tab(&buttons, 3);
         });
     }
 
     tabs.append(&chat);
     tabs.append(&tab_separator());
+    tabs.append(&browser);
+    tabs.append(&tab_separator());
     tabs.append(&git);
     tabs.append(&tab_separator());
-    tabs.append(&files);
+    tabs.append(&actions);
     tabs
 }
 

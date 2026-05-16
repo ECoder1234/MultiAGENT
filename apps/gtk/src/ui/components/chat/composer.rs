@@ -1,6 +1,6 @@
-use crate::services::app::runtime::RuntimeClient;
 use crate::services::app::CodexProfileManager;
 use crate::services::app::chat::AppDb;
+use crate::services::app::runtime::RuntimeClient;
 use gtk::prelude::*;
 use serde_json::{Value, json};
 use std::cell::RefCell;
@@ -78,6 +78,50 @@ struct QueuedUiEntry {
 const MENTION_SCAN_RESULT_LIMIT: usize = 1200;
 const MENTION_SCAN_MAX_DIRS: usize = 400;
 const MENTION_SCAN_MAX_ENTRIES_PER_DIR: usize = 512;
+const CHROME_MENTION_DISPLAY: &str = "chrome";
+const CHROME_MENTION_PATH: &str = "plugin://chrome@openai-bundled";
+
+fn chrome_mention() -> (String, String) {
+    (
+        CHROME_MENTION_DISPLAY.to_string(),
+        CHROME_MENTION_PATH.to_string(),
+    )
+}
+
+fn push_unique_mention(out: &mut Vec<(String, String)>, mention: (String, String)) {
+    if !out
+        .iter()
+        .any(|existing| existing.0.eq_ignore_ascii_case(&mention.0) || existing.1 == mention.1)
+    {
+        out.push(mention);
+    }
+}
+
+fn text_contains_mention(text: &str, display: &str) -> bool {
+    text.split(|ch: char| {
+        !(ch.is_ascii_alphanumeric() || ch == '_' || ch == '-' || ch == '@' || ch == '/')
+    })
+    .any(|word| word.eq_ignore_ascii_case(&format!("@{display}")))
+}
+
+fn mentions_for_text(
+    text: &str,
+    selected_mentions: &Rc<RefCell<Vec<MentionAttachment>>>,
+) -> Vec<(String, String)> {
+    let mut mentions = Vec::new();
+    for mention in selected_mentions.borrow().iter() {
+        if text_contains_mention(text, &mention.display) {
+            push_unique_mention(
+                &mut mentions,
+                (mention.display.clone(), mention.path.clone()),
+            );
+        }
+    }
+    if text_contains_mention(text, CHROME_MENTION_DISPLAY) {
+        push_unique_mention(&mut mentions, chrome_mention());
+    }
+    mentions
+}
 
 fn is_supported_image_path(path: &Path) -> bool {
     if !path.is_file() {
@@ -245,12 +289,14 @@ fn parse_uri_list_paths(raw: &str) -> Vec<PathBuf> {
 }
 
 fn ensure_composer_image_dir() -> Result<PathBuf, String> {
-    let dir = std::env::temp_dir().join("enzimcoder-composer-images");
+    let dir = std::env::temp_dir().join("multiagent-composer-images");
     fs::create_dir_all(&dir).map_err(|err| format!("failed to create temp image dir: {err}"))?;
     Ok(dir)
 }
 
-fn worktree_merge_action_label(action: &crate::services::app::worktree::WorktreeMergeAction) -> &'static str {
+fn worktree_merge_action_label(
+    action: &crate::services::app::worktree::WorktreeMergeAction,
+) -> &'static str {
     match action {
         crate::services::app::worktree::WorktreeMergeAction::Write => "Update",
         crate::services::app::worktree::WorktreeMergeAction::Delete => "Delete",
@@ -644,7 +690,11 @@ fn ensure_mention_files_loaded(
 
     if needs_reload || mention_files.borrow().is_empty() {
         mention_files_root.replace(Some(root.clone()));
-        mention_files.replace(collect_workspace_files(&root, MENTION_SCAN_RESULT_LIMIT));
+        let mut entries = vec![chrome_mention()];
+        for entry in collect_workspace_files(&root, MENTION_SCAN_RESULT_LIMIT) {
+            push_unique_mention(&mut entries, entry);
+        }
+        mention_files.replace(entries);
     }
 }
 

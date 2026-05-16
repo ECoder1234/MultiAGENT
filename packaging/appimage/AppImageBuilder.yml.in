@@ -1,41 +1,41 @@
 version: 1
 
 script:
-  - cargo build --release --locked -p enzimcoder-gtk --manifest-path Cargo.toml
+  - cargo build --release --locked -p multiagent-gtk --manifest-path Cargo.toml
   - rm -rf AppDir
   - mkdir -p AppDir/usr/bin
   - mkdir -p AppDir/usr/share/applications
   - mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
   - mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
   - mkdir -p AppDir/usr/share/metainfo
-  - install -Dm755 target/release/enzimcoder AppDir/usr/bin/enzimcoder
-  - install -Dm644 packaging/shared/dev.enzim.EnzimCoder.desktop AppDir/usr/share/applications/dev.enzim.EnzimCoder.desktop
-  - install -Dm644 packaging/appimage/dev.enzim.EnzimCoder.desktop AppDir/dev.enzim.EnzimCoder.desktop
-  - install -Dm644 packaging/shared/dev.enzim.EnzimCoder.metainfo.xml AppDir/usr/share/metainfo/dev.enzim.EnzimCoder.metainfo.xml
-  - install -Dm644 packaging/shared/dev.enzim.EnzimCoder.metainfo.xml AppDir/usr/share/metainfo/dev.enzim.EnzimCoder.appdata.xml
-  - install -Dm644 icons/dev.enzim.EnzimCoder.svg AppDir/usr/share/icons/hicolor/scalable/apps/dev.enzim.EnzimCoder.svg
-  - install -Dm644 icons/dev.enzim.EnzimCoder.svg AppDir/dev.enzim.EnzimCoder.svg
-  - rsvg-convert -w 512 -h 512 icons/dev.enzim.EnzimCoder.svg -o AppDir/dev.enzim.EnzimCoder.png
-  - install -Dm644 AppDir/dev.enzim.EnzimCoder.png AppDir/usr/share/icons/hicolor/512x512/apps/dev.enzim.EnzimCoder.png
-  - ln -sfn dev.enzim.EnzimCoder.png AppDir/.DirIcon
+  - install -Dm755 target/release/multiagent AppDir/usr/bin/multiagent
+  - install -Dm644 packaging/shared/dev.multiagent.multiagent.desktop AppDir/usr/share/applications/dev.multiagent.multiagent.desktop
+  - install -Dm644 packaging/appimage/dev.multiagent.multiagent.desktop AppDir/dev.multiagent.multiagent.desktop
+  - install -Dm644 packaging/shared/dev.multiagent.multiagent.metainfo.xml AppDir/usr/share/metainfo/dev.multiagent.multiagent.metainfo.xml
+  - install -Dm644 packaging/shared/dev.multiagent.multiagent.metainfo.xml AppDir/usr/share/metainfo/dev.multiagent.multiagent.appdata.xml
+  - install -Dm644 icons/dev.multiagent.multiagent.svg AppDir/usr/share/icons/hicolor/scalable/apps/dev.multiagent.multiagent.svg
+  - install -Dm644 icons/dev.multiagent.multiagent.svg AppDir/dev.multiagent.multiagent.svg
+  - rsvg-convert -w 512 -h 512 icons/dev.multiagent.multiagent.svg -o AppDir/dev.multiagent.multiagent.png
+  - install -Dm644 AppDir/dev.multiagent.multiagent.png AppDir/usr/share/icons/hicolor/512x512/apps/dev.multiagent.multiagent.png
+  - ln -sfn dev.multiagent.multiagent.png AppDir/.DirIcon
 
 AppDir:
   path: AppDir
   app_info:
-    id: dev.enzim.EnzimCoder
-    name: Enzim Coder
-    icon: dev.enzim.EnzimCoder
+    id: dev.multiagent.multiagent
+    name: MultiAGENT
+    icon: dev.multiagent.multiagent
     version: @VERSION@
-    exec: usr/bin/enzimcoder
+    exec: usr/bin/multiagent
     exec_args: $@
   apt:
     arch: amd64
     sources:
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ resolute main universe
+      - sourceline: deb http://archive.ubuntu.com/ubuntu/ noble main universe
         key_url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ resolute-updates main universe
+      - sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-updates main universe
         key_url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C
-      - sourceline: deb http://security.ubuntu.com/ubuntu/ resolute-security main universe
+      - sourceline: deb http://security.ubuntu.com/ubuntu/ noble-security main universe
         key_url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C
     include:
       - libgtk-4-1
@@ -76,4 +76,4 @@ AppDir:
 
 AppImage:
   arch: x86_64
-  file_name: EnzimCoder-@VERSION@-x86_64.AppImage
+  file_name: MultiAGENT-@VERSION@-x86_64.AppImage

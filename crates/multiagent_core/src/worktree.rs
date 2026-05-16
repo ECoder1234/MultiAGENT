@@ -110,12 +110,12 @@ fn seed_worktree_from_source(
     run_git(
         &[
             "-c",
-            "user.name=EnzimCoder",
+            "user.name=MultiAGENT",
             "-c",
-            "user.email=enzimcoder@local",
+            "user.email=multiagent@local",
             "commit",
             "-m",
-            "enzimcoder: worktree baseline snapshot",
+            "multiagent: worktree baseline snapshot",
         ],
         worktree_root,
     )
@@ -187,7 +187,7 @@ pub fn create_thread_worktree(
         } else {
             format!("v{}-{}-{}", variant_index, stamp, attempt)
         };
-        let branch = format!("enzimcoder/wt-{}-{}", source_local_thread_id, suffix);
+        let branch = format!("multiagent/wt-{}-{}", source_local_thread_id, suffix);
         let path = base_dir.join(&suffix);
         let path_str = path.to_string_lossy().to_string();
         let result = run_git(

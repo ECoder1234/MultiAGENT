@@ -5,13 +5,13 @@ use std::rc::Rc;
 use super::{actions_menu, appimage_update, skills_mcp_menu, top_tabs};
 use crate::services::app::CodexProfileManager;
 use crate::services::app::chat::AppDb;
-use crate::ui::settings::{SETTING_MULTIVIEW_ENABLED, is_multiview_enabled};
 
 pub fn build_top_bar(
     stack: Option<&adw::ViewStack>,
     db: Rc<AppDb>,
     manager: Rc<CodexProfileManager>,
     active_workspace_path: Rc<RefCell<Option<String>>>,
+    browser_split_toggle: Option<&gtk::ToggleButton>,
 ) -> adw::HeaderBar {
     let is_classic_mode = stack.is_some();
     let header = adw::HeaderBar::new();
@@ -21,7 +21,7 @@ pub fn build_top_bar(
     header.set_centering_policy(adw::CenteringPolicy::Strict);
 
     if let Some(stack) = stack {
-        let tabs = top_tabs::build_top_tabs(stack);
+        let tabs = top_tabs::build_top_tabs(stack, browser_split_toggle);
         tabs.add_css_class("top-tabs-container");
         tabs.set_valign(gtk::Align::Center);
         header.set_title_widget(Some(&tabs));
@@ -30,34 +30,6 @@ pub fn build_top_bar(
         header.set_title_widget(Some(&empty_center));
     }
 
-    let multi_toggle = gtk::ToggleButton::new();
-    multi_toggle.set_icon_name("app-grid-symbolic");
-    multi_toggle.add_css_class("multiview-toggle-button");
-    multi_toggle.set_active(is_multiview_enabled(db.as_ref()));
-    multi_toggle.set_tooltip_text(Some("Toggle multiview"));
-    {
-        let db = db.clone();
-        multi_toggle.connect_toggled(move |btn| {
-            let _ = db.set_setting(
-                SETTING_MULTIVIEW_ENABLED,
-                if btn.is_active() { "1" } else { "0" },
-            );
-        });
-    }
-    {
-        let db = db.clone();
-        let multi_toggle = multi_toggle.clone();
-        gtk::glib::timeout_add_local(std::time::Duration::from_millis(300), move || {
-            if multi_toggle.root().is_none() {
-                return gtk::glib::ControlFlow::Break;
-            }
-            let target_state = is_multiview_enabled(db.as_ref());
-            if multi_toggle.is_active() != target_state {
-                multi_toggle.set_active(target_state);
-            }
-            gtk::glib::ControlFlow::Continue
-        });
-    }
     let close_button = gtk::Button::new();
     close_button.add_css_class("top-window-close-button");
     close_button.set_widget_name("top-window-close-button");
@@ -97,8 +69,12 @@ pub fn build_top_bar(
             actions_menu::build_actions_button(db.clone(), active_workspace_path, false);
         actions_button.set_valign(gtk::Align::Center);
         end_box.append(&actions_button);
+
+        if let Some(browser_split_toggle) = browser_split_toggle {
+            browser_split_toggle.set_valign(gtk::Align::Center);
+            end_box.append(browser_split_toggle);
+        }
     }
-    end_box.append(&multi_toggle);
     end_box.append(&close_button);
     header.pack_end(&end_box);
     header

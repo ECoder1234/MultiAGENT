@@ -123,7 +123,8 @@ button.chat-message-context-item:focus-visible image,
 .chat-message {
   border-radius: 9px;
   padding: 6px 8px;
-  font-size: 0.9rem;
+  font-size: 0.93rem;
+  line-height: 1.46;
 }
 
 .chat-message-user {
@@ -404,7 +405,7 @@ button.chat-message-context-item:focus-visible image,
 
 .chat-approval-command-preview {
   font-size: 0.76rem;
-  font-family: "Monospace";
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
 }
 
 .chat-activity-card {
@@ -659,17 +660,17 @@ button.chat-message-context-item:focus-visible image,
 }
 
 .chat-command-output {
-  font-family: monospace;
-  font-size: 0.69rem;
-  line-height: 1.35;
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
+  font-size: 0.72rem;
+  line-height: 1.42;
   color: #d5deea;
   padding: 5px 6px;
 }
 
 .chat-command-detail {
-  font-family: monospace;
-  font-size: 0.69rem;
-  line-height: 1.3;
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
+  font-size: 0.72rem;
+  line-height: 1.38;
   color: alpha(@window_fg_color, 0.82);
   padding: 1px 2px 2px 2px;
 }
@@ -835,8 +836,8 @@ scrolledwindow#chat-thinking-output-scroll > scrollbar.vertical.overlay-indicato
 }
 
 .chat-filechange-path {
-  font-family: monospace;
-  font-size: 0.69rem;
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
+  font-size: 0.72rem;
   color: alpha(@window_fg_color, 0.9);
 }
 
@@ -853,9 +854,9 @@ scrolledwindow#chat-thinking-output-scroll > scrollbar.vertical.overlay-indicato
 }
 
 .chat-filechange-diff {
-  font-family: monospace;
-  font-size: 0.68rem;
-  line-height: 1.32;
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
+  font-size: 0.71rem;
+  line-height: 1.4;
   color: #d5deea;
   padding: 5px 6px;
 }
@@ -925,7 +926,6 @@ label.chat-turn-text-segment link {
   padding: 0;
   border-radius: 50%;
   background: alpha(@view_bg_color, 0.05);
-  backdrop-filter: blur(2px);
   border: 1px solid alpha(@window_fg_color, 0.1);
   box-shadow: 0 2px 8px alpha(black, 0.12),
     inset 0 1px 0 alpha(white, 0.12);
@@ -933,7 +933,6 @@ label.chat-turn-text-segment link {
 
 .scroll-down-button:hover {
   background: alpha(@view_bg_color, 0.08);
-  backdrop-filter: blur(3px);
   box-shadow: 0 4px 12px alpha(black, 0.15),
     inset 0 1px 0 alpha(white, 0.15);
 }

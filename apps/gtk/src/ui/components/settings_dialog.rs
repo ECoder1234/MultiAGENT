@@ -5,18 +5,26 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::chat;
+use super::chrome_settings;
+use super::copilot_settings;
+use super::feature_hub;
 use super::remote_settings;
 use super::settings;
 use super::skills_mcp_settings;
+use super::style_picker;
 use crate::ui::widget_tree;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SettingsPage {
     Codex,
     OpenCode,
+    Features,
+    Copilot,
+    Browser,
     VoiceInput,
     SkillsMcp,
     Remote,
+    Interface,
     About,
 }
 
@@ -25,9 +33,13 @@ impl SettingsPage {
         match self {
             SettingsPage::Codex => "Codex",
             SettingsPage::OpenCode => "OpenCode",
+            SettingsPage::Features => "Features",
+            SettingsPage::Copilot => "Copilot",
+            SettingsPage::Browser => "Browser",
             SettingsPage::VoiceInput => "Voice Input",
             SettingsPage::SkillsMcp => "Skills & MCP",
             SettingsPage::Remote => "Remote",
+            SettingsPage::Interface => "Interface",
             SettingsPage::About => "About",
         }
     }
@@ -36,9 +48,13 @@ impl SettingsPage {
         match self {
             SettingsPage::Codex => "codex",
             SettingsPage::OpenCode => "opencode",
+            SettingsPage::Features => "features",
+            SettingsPage::Copilot => "copilot",
+            SettingsPage::Browser => "browser",
             SettingsPage::VoiceInput => "voice-input",
             SettingsPage::SkillsMcp => "skills-mcp",
             SettingsPage::Remote => "remote",
+            SettingsPage::Interface => "interface",
             SettingsPage::About => "about",
         }
     }
@@ -47,10 +63,14 @@ impl SettingsPage {
         match self {
             SettingsPage::Codex => 0,
             SettingsPage::OpenCode => 1,
-            SettingsPage::VoiceInput => 2,
-            SettingsPage::SkillsMcp => 3,
-            SettingsPage::Remote => 4,
-            SettingsPage::About => 5,
+            SettingsPage::Features => 2,
+            SettingsPage::Copilot => 3,
+            SettingsPage::Browser => 4,
+            SettingsPage::VoiceInput => 5,
+            SettingsPage::SkillsMcp => 6,
+            SettingsPage::Remote => 7,
+            SettingsPage::Interface => 8,
+            SettingsPage::About => 9,
         }
     }
 
@@ -58,9 +78,13 @@ impl SettingsPage {
         match self {
             SettingsPage::Codex => "provider-codex",
             SettingsPage::OpenCode => "provider-opencode",
+            SettingsPage::Features => "view-list-symbolic",
+            SettingsPage::Copilot => "github-symbolic",
+            SettingsPage::Browser => "web-browser-symbolic",
             SettingsPage::VoiceInput => "mic-symbolic",
             SettingsPage::SkillsMcp => "3d-box-symbolic",
             SettingsPage::Remote => "waves-and-screen-symbolic",
+            SettingsPage::Interface => "cogged-wheel-big-symbolic",
             SettingsPage::About => "globe-symbolic",
         }
     }
@@ -148,6 +172,101 @@ fn about_link_button(
     button
 }
 
+fn shortcut_row(keys: &str, action: &str) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+    row.add_css_class("shortcut-row");
+
+    let key_label = gtk::Label::new(Some(keys));
+    key_label.add_css_class("shortcut-key");
+    key_label.set_xalign(0.0);
+    key_label.set_width_chars(14);
+    row.append(&key_label);
+
+    let action_label = gtk::Label::new(Some(action));
+    action_label.add_css_class("shortcut-action");
+    action_label.set_xalign(0.0);
+    action_label.set_hexpand(true);
+    row.append(&action_label);
+
+    row
+}
+
+fn build_interface_page(db: Rc<AppDb>) -> gtk::Box {
+    let page = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    page.set_hexpand(true);
+    page.set_vexpand(true);
+
+    let identity = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    identity.add_css_class("profile-settings-section");
+    let title = gtk::Label::new(Some("MultiAGENT"));
+    title.add_css_class("profile-section-title");
+    title.set_xalign(0.0);
+    let credit = gtk::Label::new(Some(
+        "MultiAGENT is built on top of enzim-coder by enz1m, which serves as the source first iteration and main backbone of this project.",
+    ));
+    credit.add_css_class("about-subtitle");
+    credit.set_xalign(0.0);
+    credit.set_wrap(true);
+    credit.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+    identity.append(&title);
+    identity.append(&credit);
+
+    let appearance = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    appearance.add_css_class("profile-settings-section");
+    let appearance_title = gtk::Label::new(Some("Appearance"));
+    appearance_title.add_css_class("profile-section-title");
+    appearance_title.set_xalign(0.0);
+    appearance.append(&appearance_title);
+
+    let theme_row = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+    let theme_text = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    theme_text.set_hexpand(true);
+    let theme_label = gtk::Label::new(Some("Dark theme"));
+    theme_label.add_css_class("settings-row-title");
+    theme_label.set_xalign(0.0);
+    let theme_hint = gtk::Label::new(Some(
+        "Default glassy dark interface with blue-purple accents.",
+    ));
+    theme_hint.add_css_class("settings-row-subtitle");
+    theme_hint.set_xalign(0.0);
+    theme_hint.set_wrap(true);
+    theme_text.append(&theme_label);
+    theme_text.append(&theme_hint);
+    let theme_switch = gtk::Switch::new();
+    theme_switch.set_active(style_picker::dark_theme_enabled(&db));
+    theme_row.append(&theme_text);
+    theme_row.append(&theme_switch);
+    appearance.append(&theme_row);
+    {
+        let db = db.clone();
+        theme_switch.connect_active_notify(move |switch| {
+            style_picker::set_dark_theme_enabled(&db, switch.is_active());
+        });
+    }
+
+    let shortcuts = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    shortcuts.add_css_class("profile-settings-section");
+    let shortcuts_title = gtk::Label::new(Some("Keyboard Shortcuts"));
+    shortcuts_title.add_css_class("profile-section-title");
+    shortcuts_title.set_xalign(0.0);
+    shortcuts.append(&shortcuts_title);
+    shortcuts.append(&shortcut_row("Ctrl+K", "Open command palette"));
+    shortcuts.append(&shortcut_row(
+        "Enter",
+        "Send prompt or push when Review is focused",
+    ));
+    shortcuts.append(&shortcut_row(
+        "@",
+        "Open file mention picker in the composer",
+    ));
+    shortcuts.append(&shortcut_row("Esc", "Close popovers and transient panels"));
+
+    page.append(&identity);
+    page.append(&appearance);
+    page.append(&shortcuts);
+    page
+}
+
 fn build_about_page() -> gtk::Box {
     let page = gtk::Box::new(gtk::Orientation::Vertical, 12);
     page.set_hexpand(true);
@@ -157,20 +276,20 @@ fn build_about_page() -> gtk::Box {
     hero.add_css_class("profile-settings-section");
     hero.add_css_class("about-hero-card");
 
-    let app_icon = gtk::Image::from_icon_name("dev.enzim.EnzimCoder");
+    let app_icon = gtk::Image::from_icon_name("dev.multiagent.multiagent");
     app_icon.set_pixel_size(56);
     app_icon.add_css_class("about-app-icon");
 
     let hero_text = gtk::Box::new(gtk::Orientation::Vertical, 6);
     hero_text.set_hexpand(true);
 
-    let title = gtk::Label::new(Some("Enzim Coder"));
+    let title = gtk::Label::new(Some(crate::app_name()));
     title.add_css_class("profile-section-title");
     title.add_css_class("about-title");
     title.set_xalign(0.0);
 
     let subtitle = gtk::Label::new(Some(
-        "Local-first AI coding workspace with threads, Git, files, and local agent sessions.",
+        "Local-first multi-agent coding workspace with threads, Git, files, diffs, and local agent sessions.",
     ));
     subtitle.set_xalign(0.0);
     subtitle.set_wrap(true);
@@ -184,7 +303,7 @@ fn build_about_page() -> gtk::Box {
     version.set_selectable(true);
     version.add_css_class("about-meta-line");
 
-    let app_id = gtk::Label::new(Some("App ID: dev.enzim.EnzimCoder"));
+    let app_id = gtk::Label::new(Some(&format!("App ID: {}", crate::app_id())));
     app_id.set_xalign(0.0);
     app_id.set_selectable(true);
     app_id.add_css_class("about-meta-line");
@@ -192,9 +311,18 @@ fn build_about_page() -> gtk::Box {
     meta.append(&version);
     meta.append(&app_id);
 
+    let credit = gtk::Label::new(Some(
+        "MultiAGENT is built on top of enzim-coder by enz1m, which serves as the source first iteration and main backbone of this project.",
+    ));
+    credit.set_xalign(0.0);
+    credit.set_wrap(true);
+    credit.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+    credit.add_css_class("about-credit");
+
     hero_text.append(&title);
     hero_text.append(&subtitle);
     hero_text.append(&meta);
+    hero_text.append(&credit);
 
     hero.append(&app_icon);
     hero.append(&hero_text);
@@ -210,13 +338,13 @@ fn build_about_page() -> gtk::Box {
     let website_button = about_link_button(
         "globe-symbolic",
         "Website",
-        "enzim.dev",
-        "https://enzim.dev",
+        "OpenAI Codex Chrome docs",
+        "https://developers.openai.com/codex/app/chrome-extension",
     );
     let github_button = about_link_button(
         "github-symbolic",
-        "GitHub",
-        "github.com/enz1m/enzim-coder",
+        "Source Backbone",
+        "enzim-coder by enz1m",
         "https://github.com/enz1m/enzim-coder",
     );
 
@@ -273,9 +401,13 @@ pub fn show(
     nav_list.set_margin_top(12);
     nav_list.append(&nav_row("provider-codex", "Codex"));
     nav_list.append(&nav_row("provider-opencode", "OpenCode"));
+    nav_list.append(&nav_row("view-list-symbolic", "Features"));
+    nav_list.append(&nav_row("github-symbolic", "Copilot"));
+    nav_list.append(&nav_row("web-browser-symbolic", "Browser"));
     nav_list.append(&nav_row("mic-symbolic", "Voice input"));
     nav_list.append(&nav_row("3d-box-symbolic", "Skills & MCP"));
     nav_list.append(&nav_row("waves-and-screen-symbolic", "Remote"));
+    nav_list.append(&nav_row("cogged-wheel-big-symbolic", "Interface"));
     nav_list.append(&nav_row("globe-symbolic", "About"));
     nav_shell.append(&nav_list);
 
@@ -321,9 +453,13 @@ pub fn show(
         settings::codex::build_settings_page(&dialog, db.clone(), manager.clone());
     let (opencode_page, _opencode_create_action) =
         settings::opencode::build_settings_page(&dialog, db.clone(), manager.clone());
+    let features_page = feature_hub::build_settings_page();
+    let copilot_page = copilot_settings::build_settings_page();
+    let browser_page = chrome_settings::build_settings_page();
     let voice_page = chat::composer::voice::build_settings_page(&dialog, db.clone(), None, false);
     let skills_mcp_page = skills_mcp_settings::build_settings_page(&dialog, db.clone(), manager);
     let remote_page = remote_settings::build_settings_page(&dialog, db.clone());
+    let interface_page = build_interface_page(db.clone());
     let about_page = build_about_page();
     let skills_mcp_scroll = gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Never)
@@ -338,12 +474,16 @@ pub fn show(
     skills_mcp_scroll.set_child(Some(&skills_mcp_page));
     stack.add_named(&codex_page, Some(SettingsPage::Codex.stack_name()));
     stack.add_named(&opencode_page, Some(SettingsPage::OpenCode.stack_name()));
+    stack.add_named(&features_page, Some(SettingsPage::Features.stack_name()));
+    stack.add_named(&copilot_page, Some(SettingsPage::Copilot.stack_name()));
+    stack.add_named(&browser_page, Some(SettingsPage::Browser.stack_name()));
     stack.add_named(&voice_page, Some(SettingsPage::VoiceInput.stack_name()));
     stack.add_named(
         &skills_mcp_scroll,
         Some(SettingsPage::SkillsMcp.stack_name()),
     );
     stack.add_named(&remote_page, Some(SettingsPage::Remote.stack_name()));
+    stack.add_named(&interface_page, Some(SettingsPage::Interface.stack_name()));
     stack.add_named(&about_page, Some(SettingsPage::About.stack_name()));
     stack.set_visible_child_name(initial_page.stack_name());
     content_shell.append(&stack);
@@ -371,24 +511,48 @@ pub fn show(
                     profiles_create_button.set_visible(false);
                 }
                 2 => {
+                    stack.set_visible_child_name(SettingsPage::Features.stack_name());
+                    page_icon.set_icon_name(Some(SettingsPage::Features.icon_name()));
+                    page_title.set_text(SettingsPage::Features.title());
+                    profiles_create_button.set_visible(false);
+                }
+                3 => {
+                    stack.set_visible_child_name(SettingsPage::Copilot.stack_name());
+                    page_icon.set_icon_name(Some(SettingsPage::Copilot.icon_name()));
+                    page_title.set_text(SettingsPage::Copilot.title());
+                    profiles_create_button.set_visible(false);
+                }
+                4 => {
+                    stack.set_visible_child_name(SettingsPage::Browser.stack_name());
+                    page_icon.set_icon_name(Some(SettingsPage::Browser.icon_name()));
+                    page_title.set_text(SettingsPage::Browser.title());
+                    profiles_create_button.set_visible(false);
+                }
+                5 => {
                     stack.set_visible_child_name(SettingsPage::VoiceInput.stack_name());
                     page_icon.set_icon_name(Some(SettingsPage::VoiceInput.icon_name()));
                     page_title.set_text(SettingsPage::VoiceInput.title());
                     profiles_create_button.set_visible(false);
                 }
-                3 => {
+                6 => {
                     stack.set_visible_child_name(SettingsPage::SkillsMcp.stack_name());
                     page_icon.set_icon_name(Some(SettingsPage::SkillsMcp.icon_name()));
                     page_title.set_text(SettingsPage::SkillsMcp.title());
                     profiles_create_button.set_visible(false);
                 }
-                4 => {
+                7 => {
                     stack.set_visible_child_name(SettingsPage::Remote.stack_name());
                     page_icon.set_icon_name(Some(SettingsPage::Remote.icon_name()));
                     page_title.set_text(SettingsPage::Remote.title());
                     profiles_create_button.set_visible(false);
                 }
-                5 => {
+                8 => {
+                    stack.set_visible_child_name(SettingsPage::Interface.stack_name());
+                    page_icon.set_icon_name(Some(SettingsPage::Interface.icon_name()));
+                    page_title.set_text(SettingsPage::Interface.title());
+                    profiles_create_button.set_visible(false);
+                }
+                9 => {
                     stack.set_visible_child_name(SettingsPage::About.stack_name());
                     page_icon.set_icon_name(Some(SettingsPage::About.icon_name()));
                     page_title.set_text(SettingsPage::About.title());

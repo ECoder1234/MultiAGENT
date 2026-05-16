@@ -1,8 +1,8 @@
 pub use crate::data::background_repo::BackgroundRepo;
 pub use crate::data::{
-    AppDb, CodexProfileRecord, LocalChatTurnInput, LocalChatTurnRecord,
-    RemotePendingPromptRecord, RemoteTelegramAccountRecord, ThreadRecord, VoiceToTextConfig,
-    WorkspaceRecord, WorkspaceWithThreads,
+    AppDb, CodexProfileRecord, LocalChatTurnInput, LocalChatTurnRecord, RemotePendingPromptRecord,
+    RemoteTelegramAccountRecord, ThreadRecord, VoiceToTextConfig, WorkspaceRecord,
+    WorkspaceWithThreads,
 };
 
 pub fn default_app_data_dir() -> std::path::PathBuf {

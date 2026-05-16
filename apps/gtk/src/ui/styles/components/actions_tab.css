@@ -1,0 +1,161 @@
+.actions-tab-root {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+
+.actions-tab-header {
+  margin-bottom: 0;
+}
+
+.actions-tab-title {
+  color: alpha(@window_fg_color, 0.96);
+  font-size: 0.95rem;
+  font-weight: 760;
+}
+
+.actions-tab-workspace {
+  color: alpha(@window_fg_color, 0.62);
+  font-size: 0.75rem;
+}
+
+.actions-tab-icon-button {
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: 8px;
+  color: alpha(@window_fg_color, 0.76);
+  background: alpha(@window_fg_color, 0.035);
+}
+
+.actions-tab-icon-button:hover,
+.actions-tab-icon-button:focus-visible {
+  color: alpha(@window_fg_color, 0.96);
+  background: alpha(@window_fg_color, 0.1);
+}
+
+.actions-tab-command-card,
+.actions-tab-panel {
+  border-radius: 10px;
+  border: 1px solid alpha(@window_fg_color, 0.1);
+  background: alpha(@window_fg_color, 0.035);
+}
+
+.actions-tab-command-card {
+  padding: 9px;
+}
+
+.actions-tab-entry {
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid alpha(@window_fg_color, 0.13);
+  background: alpha(@window_bg_color, 0.74);
+  color: alpha(@window_fg_color, 0.96);
+  caret-color: @window_fg_color;
+}
+
+.actions-tab-entry text {
+  color: alpha(@window_fg_color, 0.96);
+}
+
+.actions-tab-primary-button,
+.actions-tab-secondary-button {
+  min-height: 32px;
+  min-width: 58px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.actions-tab-secondary-button {
+  border: 1px solid alpha(@window_fg_color, 0.13);
+  background: alpha(@window_fg_color, 0.06);
+}
+
+.actions-tab-secondary-button:hover,
+.actions-tab-secondary-button:focus-visible {
+  background: alpha(@window_fg_color, 0.12);
+}
+
+.actions-tab-status {
+  color: alpha(@window_fg_color, 0.68);
+  font-size: 0.74rem;
+}
+
+.actions-tab-body {
+  min-height: 0;
+}
+
+.actions-tab-panel {
+  padding: 9px;
+}
+
+.actions-tab-panel-title {
+  color: alpha(@window_fg_color, 0.82);
+  font-size: 0.74rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.actions-tab-scroll,
+.actions-tab-scroll > viewport,
+.actions-tab-scroll > viewport.view {
+  background: transparent;
+  background-color: transparent;
+}
+
+.actions-tab-card {
+  border-radius: 9px;
+  border: 1px solid alpha(@window_fg_color, 0.1);
+  background: alpha(@window_bg_color, 0.42);
+  padding: 7px;
+}
+
+.actions-tab-run-card {
+  background: alpha(black, 0.26);
+}
+
+.actions-tab-card-title {
+  color: alpha(@window_fg_color, 0.95);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.actions-tab-run-state {
+  color: alpha(@window_fg_color, 0.62);
+  font-size: 0.7rem;
+}
+
+.actions-tab-mini-button {
+  min-height: 24px;
+  min-width: 38px;
+  padding: 0 7px;
+  border-radius: 7px;
+  color: alpha(@window_fg_color, 0.78);
+  background: alpha(@window_fg_color, 0.045);
+}
+
+.actions-tab-mini-button:hover,
+.actions-tab-mini-button:focus-visible {
+  color: alpha(@window_fg_color, 0.96);
+  background: alpha(@window_fg_color, 0.12);
+}
+
+.actions-tab-command-text {
+  color: alpha(@window_fg_color, 0.76);
+  font-family: monospace;
+  font-size: 0.72rem;
+}
+
+.actions-tab-output {
+  color: alpha(white, 0.92);
+  background: alpha(black, 0.34);
+  border-radius: 8px;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.actions-tab-empty {
+  margin: 6px;
+  font-size: 0.78rem;
+}

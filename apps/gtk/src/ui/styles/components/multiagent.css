@@ -1,0 +1,353 @@
+* {
+  font-family: "Inter", "Ubuntu Sans", "Adwaita Sans", "Noto Sans", "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+sourceview,
+sourceview text,
+.file-preview-source,
+.file-preview-source text,
+.browser-source,
+.browser-source text,
+textview.skills-mcp-editor-view,
+textview.skills-mcp-editor-view text,
+textview#skills-mcp-editor-view,
+textview#skills-mcp-editor-view text,
+.git-tab-outgoing-hash,
+.welcome-code-text,
+.command-output,
+.markdown-code,
+.chat-code,
+.chat-command-output,
+.chat-command-detail,
+.chat-filechange-path,
+.chat-filechange-diff,
+.chat-approval-command-preview,
+.composer-attach-picker-path {
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
+}
+
+.chat-message,
+.chat-command-header,
+.chat-command-section-title,
+.chat-thinking-output,
+.composer-input-view,
+textview#composer-input-view,
+textview#composer-input-view text,
+textview.composer-input-view,
+textview.composer-input-view text {
+  font-family: "Inter", "Ubuntu Sans", "Adwaita Sans", "Noto Sans", "Segoe UI", sans-serif;
+}
+
+window,
+window.background {
+  background: @window_bg_color;
+  color: @window_fg_color;
+}
+
+.main-container {
+  background:
+    radial-gradient(120% 90% at 70% -20%, alpha(@accent_bg_color, 0.12), transparent 40%),
+    linear-gradient(135deg, #0d0d0f 0%, @window_bg_color 100%);
+}
+
+.sidebar-host {
+  margin: 8px 0 8px 8px;
+  border: 1px solid alpha(@window_fg_color, 0.06);
+  border-radius: 14px;
+  background: alpha(@view_bg_color, 0.38);
+  box-shadow: inset 0 1px 0 alpha(white, 0.04), 0 14px 36px alpha(black, 0.26);
+}
+
+.content-area,
+.content-shell,
+.focused-editor-area {
+  background: transparent;
+}
+
+.chat-frame,
+.browser-split-panel,
+.git-tab-outgoing-card,
+.settings-root,
+.file-preview-card,
+.restore-preview-dialog,
+.command-palette {
+  border: 1px solid alpha(@window_fg_color, 0.06);
+  background: alpha(@view_bg_color, 0.48);
+  box-shadow: inset 0 1px 0 alpha(white, 0.045), 0 12px 32px alpha(black, 0.22);
+}
+
+.chat-frame {
+  border-radius: 14px;
+  margin-top: 0;
+}
+
+.sidebar-glass-section {
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid alpha(@window_fg_color, 0.06);
+  background: alpha(@window_fg_color, 0.035);
+}
+
+.sidebar-nav-item,
+.agent-status-row,
+.session-history-row {
+  min-height: 28px;
+  border-radius: 8px;
+  padding: 5px 7px;
+  color: alpha(@window_fg_color, 0.76);
+}
+
+.sidebar-nav-item:hover,
+.session-history-row:hover {
+  background: alpha(@window_fg_color, 0.07);
+  color: alpha(@window_fg_color, 0.94);
+}
+
+.sidebar-nav-item-active {
+  background: alpha(@accent_bg_color, 0.18);
+  color: @accent_color;
+  box-shadow: inset 0 0 0 1px alpha(@accent_color, 0.18);
+}
+
+.sidebar-nav-icon,
+.sidebar-nav-label {
+  color: inherit;
+}
+
+.sidebar-nav-label,
+.agent-status-title,
+.session-history-title {
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.agent-status-subtitle,
+.session-history-subtitle,
+.sidebar-muted-row {
+  font-size: 0.68rem;
+  color: alpha(@window_fg_color, 0.50);
+}
+
+.agent-status-dot {
+  min-width: 7px;
+  min-height: 7px;
+  border-radius: 999px;
+  margin-top: 6px;
+  background: alpha(@window_fg_color, 0.34);
+  box-shadow: 0 0 0 3px alpha(@window_fg_color, 0.04);
+}
+
+.agent-status-running {
+  background: #5b6af0;
+  box-shadow: 0 0 12px alpha(#5b6af0, 0.46);
+}
+
+.agent-status-waiting {
+  background: #a28cff;
+  box-shadow: 0 0 12px alpha(#a28cff, 0.34);
+}
+
+.agent-status-idle {
+  background: alpha(@window_fg_color, 0.36);
+}
+
+.app-brand-title {
+  color: alpha(@window_fg_color, 0.96);
+  font-size: 0.84rem;
+}
+
+.app-brand-badge {
+  color: @accent_color;
+  border-color: alpha(@accent_color, 0.28);
+  background: alpha(@accent_bg_color, 0.12);
+}
+
+.section-title {
+  color: alpha(@window_fg_color, 0.46);
+}
+
+.agent-output-tabs {
+  min-height: 42px;
+  padding: 8px 10px 0 10px;
+}
+
+button.agent-output-tab {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid alpha(@window_fg_color, 0.06);
+  background: alpha(@window_fg_color, 0.04);
+  color: alpha(@window_fg_color, 0.74);
+  box-shadow: none;
+}
+
+button.agent-output-tab:hover,
+button.agent-output-tab:focus-visible {
+  background: alpha(@window_fg_color, 0.08);
+  color: alpha(@window_fg_color, 0.96);
+}
+
+button.agent-output-tab-active {
+  border-color: alpha(@accent_color, 0.26);
+  background: alpha(@accent_bg_color, 0.18);
+  color: @accent_color;
+  box-shadow: 0 0 18px alpha(@accent_bg_color, 0.14);
+}
+
+.agent-output-tab-label,
+.agent-output-token-counter {
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.agent-output-token-counter,
+.bottom-session-meter {
+  color: alpha(@window_fg_color, 0.52);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+button,
+button.app-flat-button,
+.sidebar-action-button,
+.git-tab-action-button,
+.git-tab-selection-button,
+.git-tab-footer > button,
+button.file-preview-diff-toggle {
+  border-radius: 999px;
+}
+
+.git-tab-scroll,
+.file-preview-scroll,
+.file-preview-diff-panel {
+  border: 1px solid alpha(@window_fg_color, 0.06);
+  background: alpha(#0d0d0f, 0.36);
+}
+
+.git-tab-delta-add {
+  color: #69d890;
+}
+
+.git-tab-delta-remove {
+  color: #ff808d;
+}
+
+.git-tab-selected-delta,
+.git-tab-outgoing-count {
+  background: alpha(@accent_bg_color, 0.16);
+  color: @accent_color;
+}
+
+.composer-floating {
+  border-color: alpha(@window_fg_color, 0.08);
+  background: alpha(@view_bg_color, 0.58);
+  box-shadow: 0 14px 38px alpha(black, 0.30), inset 0 1px 0 alpha(white, 0.06);
+}
+
+.composer-input {
+  border-color: alpha(@window_fg_color, 0.08);
+  background: alpha(#0d0d0f, 0.28);
+}
+
+.command-palette-window {
+  background: alpha(@window_bg_color, 0.98);
+}
+
+.command-palette {
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.command-palette-search {
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1px solid alpha(@window_fg_color, 0.08);
+  background: alpha(@window_fg_color, 0.05);
+  color: @window_fg_color;
+  font-size: 0.98rem;
+}
+
+.command-palette-hint-row {
+  margin: 0 4px;
+}
+
+.command-palette-hint,
+.command-palette-row-subtitle,
+.command-palette-empty {
+  color: alpha(@window_fg_color, 0.54);
+  font-size: 0.76rem;
+}
+
+.command-palette-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: @accent_color;
+  background: alpha(@accent_bg_color, 0.16);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+button.command-palette-row {
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: alpha(@window_fg_color, 0.92);
+}
+
+button.command-palette-row:hover,
+button.command-palette-row:focus-visible {
+  border-color: alpha(@accent_color, 0.22);
+  background: alpha(@accent_bg_color, 0.12);
+  box-shadow: 0 0 18px alpha(@accent_bg_color, 0.12);
+}
+
+.command-palette-row-icon,
+.command-palette-row-title {
+  color: inherit;
+}
+
+.command-palette-row-title {
+  font-size: 0.86rem;
+  font-weight: 680;
+}
+
+.bottom-section {
+  border-top: 1px solid alpha(@window_fg_color, 0.05);
+}
+
+.settings-row-title {
+  color: alpha(@window_fg_color, 0.94);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.settings-row-subtitle,
+.about-credit {
+  color: alpha(@window_fg_color, 0.68);
+  font-size: 0.78rem;
+}
+
+.shortcut-row {
+  min-height: 32px;
+  padding: 4px 0;
+  border-bottom: 1px solid alpha(@window_fg_color, 0.05);
+}
+
+.shortcut-key {
+  padding: 3px 8px;
+  border-radius: 7px;
+  border: 1px solid alpha(@window_fg_color, 0.08);
+  background: alpha(#0d0d0f, 0.32);
+  color: @accent_color;
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.shortcut-action {
+  color: alpha(@window_fg_color, 0.86);
+  font-size: 0.82rem;
+}

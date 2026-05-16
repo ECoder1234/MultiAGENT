@@ -471,6 +471,54 @@ fn append_event_note_to_turn(
     super::message_render::scroll_to_bottom(messages_scroll);
 }
 
+fn format_goal_update_note(params: &Value) -> Option<String> {
+    let goal = params.get("goal")?;
+    let objective = goal
+        .get("objective")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())?;
+    let status = goal
+        .get("status")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("active");
+    let tokens_used = goal.get("tokensUsed").and_then(Value::as_i64).unwrap_or(0);
+    let token_budget = goal.get("tokenBudget").and_then(Value::as_i64);
+    let time_used = goal
+        .get("timeUsedSeconds")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
+
+    let budget_text = token_budget
+        .map(|budget| format!("tokens {tokens_used}/{budget}"))
+        .unwrap_or_else(|| format!("tokens {tokens_used}"));
+    let time_text = if time_used > 0 {
+        format!(", time {}", format_goal_duration(time_used))
+    } else {
+        String::new()
+    };
+
+    Some(format!(
+        "**Goal {status}:** {objective}\n_{budget_text}{time_text}._"
+    ))
+}
+
+fn format_goal_duration(total_secs: i64) -> String {
+    let total_secs = total_secs.max(0);
+    let hours = total_secs / 3600;
+    let minutes = (total_secs % 3600) / 60;
+    let seconds = total_secs % 60;
+    if hours > 0 {
+        format!("{hours}h {minutes}m")
+    } else if minutes > 0 {
+        format!("{minutes}m {seconds}s")
+    } else {
+        format!("{seconds}s")
+    }
+}
+
 fn build_tool_call_success_payload(text: &str) -> Value {
     json!({
         "success": true,

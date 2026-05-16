@@ -86,13 +86,15 @@ pub fn forward_turn_completion_if_enabled(
     thread::spawn(move || {
         thread::sleep(Duration::from_secs(2));
 
-        let client = match TelegramClient::new(bot_token) {
-            Ok(client) => client,
-            Err(err) => {
-                eprintln!("[remote] telegram client init failed: {err}");
-                return;
-            }
-        };
+        let provider = account.provider.clone();
+        let client =
+            match TelegramClient::new_for_channel_named(&provider, bot_token, chat_id.clone()) {
+                Ok(client) => client,
+                Err(err) => {
+                    eprintln!("[remote] remote client init failed: {err}");
+                    return;
+                }
+            };
         let db_bg = AppDb::open_default();
         let mut assistant_text = String::new();
         let mut command_count = 0usize;
@@ -157,7 +159,7 @@ pub fn forward_turn_completion_if_enabled(
                     );
                 }
                 Err(err) => {
-                    eprintln!("[remote] failed to forward turn to telegram: {err}");
+                    eprintln!("[remote] failed to forward turn remotely: {err}");
                     break;
                 }
             }
@@ -167,6 +169,7 @@ pub fn forward_turn_completion_if_enabled(
 }
 
 fn worker_loop(running: Arc<AtomicBool>) {
+    let mut active_provider = String::new();
     let mut active_token = String::new();
     let mut active_chat_id = String::new();
     let mut update_offset: Option<i64> = None;
@@ -186,6 +189,7 @@ fn worker_loop(running: Arc<AtomicBool>) {
             announce_remote_mode_deactivated(
                 db.as_ref(),
                 &mut client,
+                &mut active_provider,
                 &mut active_token,
                 &mut active_chat_id,
             );
@@ -211,13 +215,20 @@ fn worker_loop(running: Arc<AtomicBool>) {
             continue;
         };
 
-        let should_reset_client =
-            account.bot_token != active_token || account.telegram_chat_id != active_chat_id;
+        let should_reset_client = account.provider != active_provider
+            || account.bot_token != active_token
+            || account.telegram_chat_id != active_chat_id;
         if should_reset_client {
+            active_provider = account.provider.clone();
             active_token = account.bot_token.clone();
             active_chat_id = account.telegram_chat_id.clone();
             update_offset = None;
-            client = TelegramClient::new(account.bot_token.clone()).ok();
+            client = TelegramClient::new_for_channel_named(
+                &account.provider,
+                account.bot_token.clone(),
+                account.telegram_chat_id.clone(),
+            )
+            .ok();
         }
         let Some(client) = client.as_ref() else {
             thread::sleep(Duration::from_millis(1200));
@@ -236,7 +247,7 @@ fn worker_loop(running: Arc<AtomicBool>) {
                 process_updates(db.as_ref(), client, &account, updates);
             }
             Err(err) => {
-                eprintln!("[remote] telegram polling error: {err}");
+                eprintln!("[remote] polling error: {err}");
                 thread::sleep(Duration::from_millis(1200));
             }
         }
@@ -245,9 +256,18 @@ fn worker_loop(running: Arc<AtomicBool>) {
 
 fn announce_remote_mode_activated(db: &AppDb, client: &TelegramClient, chat_id: &str) {
     let workspaces = db.list_workspaces_with_threads().unwrap_or_default();
+    let provider_label = db
+        .remote_telegram_active_account()
+        .ok()
+        .flatten()
+        .map(|account| crate::remote::remote_provider_label(&account.provider).to_string())
+        .unwrap_or_else(|| "Remote".to_string());
     if workspaces.is_empty() {
-        let body = "<b>Remote mode activated.</b>\nTelegram control is online.\n\n<b>Remote Navigator · Workspaces</b>\nNo workspaces found.";
-        let _ = client.send_html_message(chat_id, body, None);
+        let body = format!(
+            "<b>Remote mode activated.</b>\n{} control is online.\n\n<b>Remote Navigator - Workspaces</b>\nNo workspaces found.",
+            provider_label
+        );
+        let _ = client.send_html_message(chat_id, &body, None);
         return;
     }
 
@@ -259,13 +279,17 @@ fn announce_remote_mode_activated(db: &AppDb, client: &TelegramClient, chat_id: 
         })]);
     }
     let markup = json!({ "inline_keyboard": rows });
-    let body = "<b>Remote mode activated.</b>\nTelegram control is online.\n\n<b>Remote Navigator · Workspaces</b>\nSelect a workspace to continue. The buttons below open each workspace and then show its thread list for quick routing.";
-    let _ = client.send_html_message_with_markup(chat_id, body, None, Some(markup));
+    let body = format!(
+        "<b>Remote mode activated.</b>\n{} control is online.\n\n<b>Remote Navigator - Workspaces</b>\nUse /workspaces, /threads, /ws N, /th N, /send text, or plain text after selecting a thread.",
+        provider_label
+    );
+    let _ = client.send_html_message_with_markup(chat_id, &body, None, Some(markup));
 }
 
 fn announce_remote_mode_deactivated(
     db: &AppDb,
     client_slot: &mut Option<TelegramClient>,
+    active_provider: &mut String,
     active_token: &mut String,
     active_chat_id: &mut String,
 ) {
@@ -273,12 +297,19 @@ fn announce_remote_mode_deactivated(
         return;
     };
     if client_slot.is_none()
+        || account.provider != *active_provider
         || account.bot_token != *active_token
         || account.telegram_chat_id != *active_chat_id
     {
+        *active_provider = account.provider.clone();
         *active_token = account.bot_token.clone();
         *active_chat_id = account.telegram_chat_id.clone();
-        *client_slot = TelegramClient::new(account.bot_token.clone()).ok();
+        *client_slot = TelegramClient::new_for_channel_named(
+            &account.provider,
+            account.bot_token.clone(),
+            account.telegram_chat_id.clone(),
+        )
+        .ok();
     }
     let Some(client) = client_slot.as_ref() else {
         return;
@@ -454,7 +485,7 @@ fn handle_reply_to_forwarded_message(
                 .enqueue_remote_pending_prompt(
                     local_thread_id,
                     text,
-                    "telegram-reply",
+                    "remote-reply",
                     Some(chat_id),
                     incoming_message_id,
                     from_user_id,
@@ -478,12 +509,12 @@ fn handle_reply_to_forwarded_message(
         Ok(None) => {
             let _ = client.send_html_message(
                 chat_id,
-                "I could not map that reply to a thread. Open <code>Threads</code>, select one, then send plain text.",
+                "I could not map that reply to a thread. Run /threads, select one with /th N, then send plain text.",
                 None,
             );
         }
         Err(err) => {
-            eprintln!("[remote] failed to map telegram reply: {err}");
+            eprintln!("[remote] failed to map remote reply: {err}");
         }
     }
 }
@@ -828,7 +859,7 @@ fn send_text_to_selected_thread(
         .enqueue_remote_pending_prompt(
             thread_id,
             text,
-            "telegram-command",
+            "remote-command",
             Some(chat_id),
             None,
             from_user_id,
@@ -1086,11 +1117,11 @@ fn runtime_workspace_path_for_thread(db: &AppDb, thread: &ThreadRecord) -> Optio
 }
 
 fn chat_workspace_setting_key(chat_id: &str) -> String {
-    format!("remote:telegram:chat:{chat_id}:workspace_id")
+    format!("remote:discord:chat:{chat_id}:workspace_id")
 }
 
 fn chat_thread_setting_key(chat_id: &str) -> String {
-    format!("remote:telegram:chat:{chat_id}:thread_id")
+    format!("remote:discord:chat:{chat_id}:thread_id")
 }
 
 fn unix_now_secs() -> i64 {

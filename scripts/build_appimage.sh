@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-IMAGE_TAG="${APPIMAGE_DOCKER_IMAGE:-enzimcoder/appimage-builder:local}"
+IMAGE_TAG="${APPIMAGE_DOCKER_IMAGE:-multiagent/appimage-builder:local}"
 DOCKERFILE="${APPIMAGE_DOCKERFILE:-${ROOT_DIR}/packaging/appimage/Dockerfile}"
 UID_GID="$(id -u):$(id -g)"
 

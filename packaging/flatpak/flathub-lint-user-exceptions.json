@@ -1,0 +1,6 @@
+{
+  "dev.multiagent.multiagent": [
+    "finish-args-home-filesystem-access",
+    "finish-args-flatpak-spawn-access"
+  ]
+}

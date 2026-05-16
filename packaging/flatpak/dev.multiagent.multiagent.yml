@@ -1,0 +1,59 @@
+app-id: dev.multiagent.multiagent
+runtime: org.gnome.Platform
+runtime-version: "50"
+sdk: org.gnome.Sdk
+command: multiagent
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # MultiAGENT is a coding workspace: it needs user project files and must
+  # bridge to user-installed agent CLIs on the host instead of bundling account-
+  # bound tools into the app. These two permissions require a Flathub linter
+  # exception; see flathub-exceptions.json in this directory.
+  - --filesystem=home
+  - --talk-name=org.freedesktop.Flatpak
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/doc
+  - /share/gtk-doc
+  - /share/man
+  - /share/pkgconfig
+  - "*.a"
+  - "*.la"
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/multiagent/cargo-home
+    CARGO_NET_OFFLINE: "true"
+modules:
+  - name: multiagent
+    buildsystem: simple
+    build-commands:
+      - cargo build --release --locked --offline -p multiagent-gtk
+      - install -Dm755 target/release/multiagent /app/bin/multiagent
+      - install -Dm644 LICENSE /app/share/licenses/dev.multiagent.multiagent/LICENSE
+      - install -Dm644 packaging/shared/dev.multiagent.multiagent.desktop /app/share/applications/dev.multiagent.multiagent.desktop
+      - install -Dm644 packaging/shared/dev.multiagent.multiagent.metainfo.xml /app/share/metainfo/dev.multiagent.multiagent.metainfo.xml
+      - install -Dm644 icons/dev.multiagent.multiagent.svg /app/share/icons/hicolor/scalable/apps/dev.multiagent.multiagent.svg
+    sources:
+      - type: dir
+        path: ../..
+        skip:
+          - .flatpak-builder
+          - .git
+          - AppDir
+          - build-dir
+          - dist
+          - repo
+          - target
+      - type: file
+        path: cargo-config.toml
+        dest: .cargo
+        dest-filename: config.toml
+      - cargo-sources.json

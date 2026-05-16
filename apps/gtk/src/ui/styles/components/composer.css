@@ -9,14 +9,13 @@
 
 .composer-floating {
   background: alpha(@view_bg_color, 0.52);
-  backdrop-filter: blur(10px);
   border: 1px solid alpha(@window_fg_color, 0.12);
   box-shadow: 0 8px 24px alpha(black, 0.18),
     inset 0 1px 0 alpha(white, 0.06);
 }
 
 .composer-input {
-  font-size: 0.88rem;
+  font-size: 0.93rem;
   min-height: 40px;
   border-radius: 12px;
   background-color: alpha(@window_fg_color, 0.06);
@@ -63,8 +62,8 @@ scrolledwindow#composer-input-scroll > scrollbar.vertical > range > trough > sli
 }
 
 .composer-input-view {
-  font-size: 0.88rem;
-  line-height: 1.25;
+  font-size: 0.93rem;
+  line-height: 1.38;
   background: transparent;
   background-color: transparent;
   border: none;
@@ -90,7 +89,6 @@ scrolledwindow#composer-input-scroll > scrollbar.vertical > range > trough > sli
   border-radius: 14px;
   border: 1px solid alpha(@window_fg_color, 0.13);
   background: alpha(@view_bg_color, 0.54);
-  backdrop-filter: blur(10px);
   box-shadow: 0 8px 24px alpha(black, 0.16),
     inset 0 1px 0 alpha(white, 0.06);
 }
@@ -246,7 +244,7 @@ button.composer-worktree-create {
 }
 
 .composer-placeholder {
-  font-size: 0.88rem;
+  font-size: 0.93rem;
   color: alpha(@window_fg_color, 0.45);
   line-height: 1;
 }
@@ -540,7 +538,6 @@ button.chat-queued-merge:hover {
   border-radius: 10px;
   padding: 4px 7px;
   background: alpha(@view_bg_color, 0.52);
-  backdrop-filter: blur(10px);
   border: 1px solid alpha(@window_fg_color, 0.12);
   box-shadow: inset 0 1px 0 alpha(white, 0.05);
 }
@@ -821,7 +818,7 @@ button.composer-attach-picker-back:hover {
 .composer-attach-picker-path {
   color: alpha(@window_fg_color, 0.72);
   font-size: 0.76rem;
-  font-family: "JetBrains Mono", "Fira Mono", monospace;
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
 }
 
 .composer-attach-picker-search {

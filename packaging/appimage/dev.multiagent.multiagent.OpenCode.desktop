@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=MultiAGENT
+Comment=Local-first OpenCode workspace with threads, Git, and files
+Exec=AppRun --opencode
+TryExec=AppRun
+Icon=dev.multiagent.multiagent
+Terminal=false
+Categories=Development;IDE;
+Keywords=opencode;coding;chat;git;workspace;
+StartupNotify=true
+StartupWMClass=dev.multiagent.multiagent

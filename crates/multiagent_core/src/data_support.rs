@@ -19,7 +19,7 @@ pub const PROFILE_ICON_POOL: [&str; 15] = [
     "car-side-symbolic",
 ];
 
-pub const PROFILE_HOME_OVERRIDE_ENV: &str = "ENZIMCODER_PROFILE_HOME_DIR";
+pub const PROFILE_HOME_OVERRIDE_ENV: &str = "MULTIAGENT_PROFILE_HOME_DIR";
 
 pub fn default_app_data_dir() -> PathBuf {
     if let Some(home_override) = profile_home_override_dir() {
@@ -27,11 +27,11 @@ pub fn default_app_data_dir() -> PathBuf {
     }
 
     if let Some(path) = std::env::var_os("XDG_DATA_HOME").map(PathBuf::from) {
-        return path.join("enzimcoder");
+        return path.join("multiagent");
     }
 
     if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
-        return home.join(".local").join("share").join("enzimcoder");
+        return home.join(".local").join("share").join("multiagent");
     }
 
     PathBuf::from(".")

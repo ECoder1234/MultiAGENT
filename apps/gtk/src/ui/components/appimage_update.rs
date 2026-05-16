@@ -14,7 +14,7 @@ use std::thread;
 use std::time::Duration;
 
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
-const RELEASES_LATEST_URL: &str = "https://api.github.com/repos/enz1m/enzim-coder/releases/latest";
+const RELEASES_LATEST_URL: &str = "";
 const CHECK_INTERVAL: Duration = Duration::from_secs(300);
 const ARCH_ASSET_TOKEN: &str = "x86_64";
 
@@ -240,7 +240,7 @@ pub fn build_update_button() -> gtk::Box {
                 icon.set_icon_name(Some("view-refresh-symbolic"));
                 title.set_text("Updating AppImage");
                 summary.set_text(&format!(
-                    "Downloading and applying Enzim Coder {}.",
+                    "Downloading and applying MultiAGENT {}.",
                     release.version
                 ));
                 status.set_text("The updated AppImage is being written in place.");
@@ -262,7 +262,7 @@ pub fn build_update_button() -> gtk::Box {
                 icon.set_icon_name(Some("view-refresh-symbolic"));
                 title.set_text("Restart to apply update");
                 summary.set_text(&format!(
-                    "Enzim Coder {} has been installed.",
+                    "MultiAGENT {} has been installed.",
                     release.version
                 ));
                 status.set_text("Restart the app to launch the new AppImage.");
@@ -288,7 +288,7 @@ pub fn build_update_button() -> gtk::Box {
                         .as_ref()
                         .map(|info| {
                             format!(
-                                "Enzim Coder {} is available, but the update did not complete.",
+                                "MultiAGENT {} is available, but the update did not complete.",
                                 info.version
                             )
                         })
@@ -368,7 +368,7 @@ impl UpdateCoordinator {
     fn new() -> Rc<Self> {
         let (tx, rx) = mpsc::channel::<WorkerMessage>();
         let appimage_path = current_appimage_path();
-        let initial_state = if appimage_path.is_some() {
+        let initial_state = if appimage_path.is_some() && !RELEASES_LATEST_URL.is_empty() {
             UpdateState::Idle
         } else {
             UpdateState::Unsupported
@@ -395,7 +395,7 @@ impl UpdateCoordinator {
             });
         }
 
-        if coordinator.appimage_path.is_some() {
+        if coordinator.appimage_path.is_some() && !RELEASES_LATEST_URL.is_empty() {
             coordinator.request_check();
             let weak = Rc::downgrade(&coordinator);
             glib::timeout_add_local(CHECK_INTERVAL, move || {
@@ -429,7 +429,10 @@ impl UpdateCoordinator {
     }
 
     fn request_check(&self) {
-        if self.appimage_path.is_none() || self.check_in_flight.get() || self.update_in_flight.get()
+        if self.appimage_path.is_none()
+            || RELEASES_LATEST_URL.is_empty()
+            || self.check_in_flight.get()
+            || self.update_in_flight.get()
         {
             return;
         }
@@ -599,7 +602,7 @@ fn fetch_latest_release() -> Result<Option<ReleaseInfo>, String> {
 
 fn github_client() -> Result<Client, String> {
     Client::builder()
-        .user_agent(format!("EnzimCoder/{APP_VERSION}"))
+        .user_agent(format!("MultiAGENT/{APP_VERSION}"))
         .connect_timeout(Duration::from_secs(10))
         .timeout(Duration::from_secs(20))
         .build()
@@ -738,7 +741,7 @@ fn replace_with_download(appimage_path: &Path, download_url: &str) -> Result<(),
     let temp_path = parent.join(format!(".{file_name}.download"));
 
     let client = Client::builder()
-        .user_agent(format!("EnzimCoder/{APP_VERSION}"))
+        .user_agent(format!("MultiAGENT/{APP_VERSION}"))
         .connect_timeout(Duration::from_secs(10))
         .timeout(Duration::from_secs(600))
         .build()

@@ -109,7 +109,9 @@ fn select_welcome_profile<'a>(
 ) -> Option<&'a CodexProfileRecord> {
     profiles
         .iter()
-        .filter(|profile| crate::services::app::runtime::runtime_cli_available_for_backend(&profile.backend_kind))
+        .filter(|profile| {
+            crate::services::app::runtime::runtime_cli_available_for_backend(&profile.backend_kind)
+        })
         .max_by_key(|profile| {
             (
                 profile_has_account_identity(profile),
@@ -120,7 +122,7 @@ fn select_welcome_profile<'a>(
 }
 
 fn start_brand_reveal_animation(title: &gtk::Label, details_revealer: &gtk::Revealer) {
-    let full_text = "Enzim Coder".chars().collect::<Vec<char>>();
+    let full_text = "MultiAGENT".chars().collect::<Vec<char>>();
     let cursor = Rc::new(RefCell::new(0usize));
     let title = title.clone();
     let details_revealer = details_revealer.clone();
@@ -399,7 +401,7 @@ pub fn attach(
     login_box.add_css_class("welcome-section");
 
     let login_hint = gtk::Label::new(Some(
-        "You need to log in to a supported runtime before using Enzim Coder.",
+        "You need to log in to a supported runtime before using MultiAGENT.",
     ));
     login_hint.set_xalign(0.5);
     login_hint.set_halign(gtk::Align::Center);
@@ -721,7 +723,7 @@ pub fn attach(
                 login_url_revealer.set_reveal_child(false);
                 if installed && has_profile_target {
                     login_hint.set_text(&format!(
-                        "Authenticate {backend_display} before using Enzim Coder."
+                        "Authenticate {backend_display} before using MultiAGENT."
                     ));
                     login_button.set_label(&format!("Start {backend_display} Login"));
                     login_button.set_visible(true);
@@ -733,7 +735,7 @@ pub fn attach(
                     login_button.set_visible(false);
                 } else {
                     login_hint.set_text(
-                        "You need to install a supported runtime before using Enzim Coder.",
+                        "You need to install a supported runtime before using MultiAGENT.",
                     );
                     login_button.set_label("Start Login");
                     login_button.set_visible(true);
@@ -1139,7 +1141,7 @@ pub fn attach(
                     guide_next_button.set_label("Next");
                 }
                 2 => {
-                    guide_title.set_text("Chat, Git and Files");
+                    guide_title.set_text("Chat, Browser, Review, Actions");
                     guide_section_one.set_visible(true);
                     guide_section_one_icon.set_icon_name(Some("chat-new-symbolic"));
                     guide_section_one_title.set_text("Chat");
@@ -1148,27 +1150,26 @@ pub fn attach(
                     );
                     guide_section_two.set_visible(true);
                     guide_section_two_icon.set_icon_name(Some("git-symbolic"));
-                    guide_section_two_title.set_text("Git");
+                    guide_section_two_title.set_text("Browser");
                     guide_section_two_body.set_text(
-                        "Review changes, commit, push, and fetch. You can check repo status quickly here.",
+                        "Open local apps, URLs, and workspace files without leaving the app.",
                     );
                     guide_section_three.set_visible(true);
-                    guide_section_three_icon.set_icon_name(Some("folder-silhouette-symbolic"));
-                    guide_section_three_title.set_text("Files");
-                    guide_section_three_body.set_text(
-                        "Browse files in the active workspace. Open anything without leaving the app.",
-                    );
+                    guide_section_three_icon.set_icon_name(Some("git-symbolic"));
+                    guide_section_three_title.set_text("Review");
+                    guide_section_three_body
+                        .set_text("Review changes, stage selected files, commit, push, and fetch.");
                     guide_note.set_visible(false);
                     spotlight_groups.replace(vec![vec!["top-tab".to_string()]]);
                     section_hover_targets.replace(vec![
                         vec!["top-tab-chat".to_string()],
+                        vec!["top-tab-browser".to_string()],
                         vec!["top-tab-git".to_string()],
-                        vec!["top-tab-files".to_string()],
                     ]);
                     guide_next_button.set_label("Next");
                 }
                 3 => {
-                    guide_title.set_text("Skills, MCP, Run and Multichat");
+                    guide_title.set_text("Skills, MCP, Run and Focus");
                     guide_section_one.set_visible(true);
                     guide_section_one_icon.set_icon_name(Some("3d-box-symbolic"));
                     guide_section_one_title.set_text("Skills & MCP");
@@ -1182,20 +1183,20 @@ pub fn attach(
                         "Run saved workspace commands from the top bar. This is useful for repeat tasks.",
                     );
                     guide_section_three.set_visible(true);
-                    guide_section_three_icon.set_icon_name(Some("view-grid-symbolic"));
-                    guide_section_three_title.set_text("Multichat View");
+                    guide_section_three_icon.set_icon_name(Some("text-editor-symbolic"));
+                    guide_section_three_title.set_text("Focused Threads");
                     guide_section_three_body
-                        .set_text("Open multichat view to work with multiple chats side by side.");
+                        .set_text("Select or drag a thread to open it as the single editor page.");
                     guide_note.set_visible(false);
                     spotlight_groups.replace(vec![vec![
                         "topbar-skills-mcp-button".to_string(),
                         "topbar-actions-button".to_string(),
-                        "multiview-toggle-button".to_string(),
+                        "top-tab-chat".to_string(),
                     ]]);
                     section_hover_targets.replace(vec![
                         vec!["topbar-skills-mcp-button".to_string()],
                         vec!["topbar-actions-button".to_string()],
-                        vec!["multiview-toggle-button".to_string()],
+                        vec!["top-tab-chat".to_string()],
                     ]);
                     guide_next_button.set_label("Next");
                 }
@@ -1205,7 +1206,7 @@ pub fn attach(
                     guide_section_one_icon.set_icon_name(Some("waves-and-screen-symbolic"));
                     guide_section_one_title.set_text("Remote");
                     guide_section_one_body.set_text(
-                        "Toggle Telegram forwarding mode. Use it when you want remote interaction.",
+                        "Toggle Discord forwarding mode. Use it when you want remote interaction.",
                     );
                     guide_section_two.set_visible(true);
                     guide_section_two_icon.set_icon_name(Some("preferences-system-symbolic"));
@@ -1326,8 +1327,10 @@ pub fn attach(
             }
             poll_in_flight.replace(true);
 
-            let codex_installed = crate::services::app::runtime::runtime_cli_available_for_backend("codex");
-            let opencode_installed = crate::services::app::runtime::runtime_cli_available_for_backend("opencode");
+            let codex_installed =
+                crate::services::app::runtime::runtime_cli_available_for_backend("codex");
+            let opencode_installed =
+                crate::services::app::runtime::runtime_cli_available_for_backend("opencode");
             let active_profile_id = db.active_profile_id().ok().flatten();
             let current_runtime_profile_id = db
                 .runtime_profile_id()

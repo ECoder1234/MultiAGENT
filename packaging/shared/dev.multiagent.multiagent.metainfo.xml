@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.multiagent.multiagent</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>MultiAGENT</name>
+  <summary>Coordinate coding agents</summary>
+  <developer id="dev.multiagent">
+    <name>MultiAGENT contributors</name>
+  </developer>
+  <url type="homepage">https://multiagent.dev</url>
+  <launchable type="desktop-id">dev.multiagent.multiagent.desktop</launchable>
+  <categories>
+    <category>Development</category>
+    <category>IDE</category>
+  </categories>
+  <keywords>
+    <keyword>agent</keyword>
+    <keyword>coding</keyword>
+    <keyword>diff</keyword>
+    <keyword>git</keyword>
+    <keyword>workspace</keyword>
+  </keywords>
+  <branding>
+    <color type="primary" scheme_preference="light">#5b6af0</color>
+    <color type="primary" scheme_preference="dark">#25306f</color>
+  </branding>
+  <provides>
+    <binary>multiagent</binary>
+  </provides>
+  <description>
+    <p>
+      MultiAGENT is a local-first coding workspace for coordinating agent sessions,
+      reviewing source changes, and moving between project conversations.
+    </p>
+    <p>
+      The app combines persistent chat threads, Git-aware review surfaces,
+      file previews, runtime profiles, and a compact command palette in one
+      Linux desktop interface.
+    </p>
+    <p>
+      Flatpak builds run inside a sandbox and use user-owned project files,
+      network access, and explicit host runtime bridges for coding-agent CLIs.
+    </p>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <image type="source" width="1200" height="800">https://raw.githubusercontent.com/ECoder1234/multiagent-flathub-assets/766e775808480a3c9f01238b7ff854c398ac329b/screenshots/dev.multiagent.multiagent-main.png</image>
+      <caption>Coordinate coding agents, sessions, and diffs in MultiAGENT</caption>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="0.1.3" date="2026-03-15">
+      <description>
+        <p>
+          Introduces the MultiAGENT rebrand, glassy dark interface, agent
+          status surfaces, command palette, settings shortcuts, and Flatpak
+          packaging updates.
+        </p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

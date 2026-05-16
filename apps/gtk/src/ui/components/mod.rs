@@ -1,11 +1,16 @@
 pub mod actions_menu;
+pub mod actions_tab;
 pub mod appimage_update;
 pub mod bottom_bar;
+pub mod browser_tab;
 pub mod chat;
+pub mod chrome_settings;
+pub mod command_palette;
+pub mod copilot_settings;
+pub mod feature_hub;
 pub mod file_browser;
 pub mod file_preview;
 pub mod git_tab;
-pub mod multi_chat;
 pub mod placeholder;
 pub mod remote_settings;
 pub mod restore_preview;

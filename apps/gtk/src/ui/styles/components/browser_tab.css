@@ -1,0 +1,136 @@
+.browser-split-revealer {
+  background: transparent;
+}
+
+.browser-split-panel {
+  border-left: 1px solid alpha(@window_fg_color, 0.1);
+  background: alpha(@window_bg_color, 0.72);
+  background-color: alpha(@window_bg_color, 0.72);
+  box-shadow: -16px 0 32px alpha(black, 0.11);
+}
+
+.browser-split-panel .chat-frame {
+  border-radius: 0;
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.browser-split-panel .browser-tab-root {
+  margin: 8px;
+}
+
+.browser-tab-root {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+
+.browser-tab-header {
+  margin-bottom: 0;
+}
+
+.browser-icon-button {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  color: alpha(@window_fg_color, 0.78);
+  background: alpha(@window_fg_color, 0.035);
+}
+
+.browser-icon-button:hover,
+.browser-icon-button:focus-visible {
+  color: alpha(@window_fg_color, 0.98);
+  background: alpha(@window_fg_color, 0.1);
+}
+
+.browser-url-entry {
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid alpha(@window_fg_color, 0.13);
+  background: alpha(@window_bg_color, 0.74);
+  color: alpha(@window_fg_color, 0.96);
+  caret-color: @window_fg_color;
+  font-size: 0.82rem;
+}
+
+.browser-url-entry text {
+  color: alpha(@window_fg_color, 0.96);
+}
+
+.browser-go-button {
+  min-height: 32px;
+  min-width: 54px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.browser-shortcuts {
+  margin-top: -2px;
+}
+
+.browser-shortcut-button {
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid alpha(@window_fg_color, 0.1);
+  background: alpha(@window_fg_color, 0.035);
+  color: alpha(@window_fg_color, 0.74);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.browser-shortcut-button:hover,
+.browser-shortcut-button:focus-visible {
+  background: alpha(@window_fg_color, 0.09);
+  color: alpha(@window_fg_color, 0.94);
+}
+
+.browser-meta-row {
+  margin-top: 2px;
+}
+
+.browser-title {
+  color: alpha(@window_fg_color, 0.95);
+  font-size: 0.88rem;
+  font-weight: 720;
+}
+
+.browser-meta {
+  color: alpha(@window_fg_color, 0.62);
+  font-size: 0.74rem;
+}
+
+.browser-content-scroll,
+.browser-content-scroll > viewport,
+.browser-content-scroll > viewport.view {
+  border-radius: 10px;
+  background: #10131a;
+  background-color: #10131a;
+}
+
+.browser-content-scroll {
+  border: 1px solid alpha(@window_fg_color, 0.1);
+}
+
+.browser-source {
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.42;
+}
+
+.browser-source,
+.browser-source text {
+  background: #10131a;
+  color: alpha(white, 0.94);
+}
+
+.browser-source border {
+  background: #10131a;
+}
+
+.browser-image {
+  padding: 14px;
+  background: #10131a;
+}

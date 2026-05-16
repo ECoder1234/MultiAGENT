@@ -1,7 +1,7 @@
-use crate::services::app::runtime::RuntimeClient;
-use crate::services::app::runtime::McpServerInfo;
 use crate::services::app::CodexProfileManager;
 use crate::services::app::chat::AppDb;
+use crate::services::app::runtime::McpServerInfo;
+use crate::services::app::runtime::RuntimeClient;
 use crate::services::app::skills::{
     McpCatalogEntry, PolicyKind, ProfileAssignments, SkillCatalogEntry, SkillMcpCatalog,
     load_catalog, load_profile_assignments, remove_catalog_mcp, remove_catalog_skill,
@@ -475,7 +475,7 @@ fn open_add_skill_dialog(
     root.set_margin_bottom(12);
 
     let intro = gtk::Label::new(Some(
-        "Add a skill from markdown or paste skill text. Skills are stored globally in Enzim Coder DB, then assigned per profile below.",
+        "Add a skill from markdown or paste skill text. Skills are stored globally in MultiAGENT DB, then assigned per profile below.",
     ));
     intro.set_xalign(0.0);
     intro.set_wrap(true);
@@ -934,13 +934,13 @@ fn open_add_mcp_server_dialog(
         "mcp-editor-view",
     );
     raw_view.buffer().set_text(
-        "# Enzim / Codex JSON example\n# {\"mcp\": {\"github\": {\"transport\": \"streamable_http\", \"url\": \"https://example.com/mcp\"}}}\n\n# OpenCode JSON example\n# {\"mcp\": {\"github\": {\"type\": \"local\", \"command\": [\"npx\", \"-y\", \"@modelcontextprotocol/server-github\"]}}}\n\n# TOML example\n# [mcp.github]\n# transport = \"stdio\"\n# command = \"npx\"\n# args = [\"-y\", \"@modelcontextprotocol/server-github\"]\n",
+        "# MultiAGENT / Codex JSON example\n# {\"mcp\": {\"github\": {\"transport\": \"streamable_http\", \"url\": \"https://example.com/mcp\"}}}\n\n# OpenCode JSON example\n# {\"mcp\": {\"github\": {\"type\": \"local\", \"command\": [\"npx\", \"-y\", \"@modelcontextprotocol/server-github\"]}}}\n\n# TOML example\n# [mcp.github]\n# transport = \"stdio\"\n# command = \"npx\"\n# args = [\"-y\", \"@modelcontextprotocol/server-github\"]\n",
     );
     raw_scroll.set_child(Some(&raw_view));
     root.append(&raw_scroll);
 
     let raw_hint = gtk::Label::new(Some(
-        "Raw MCP config accepts both Enzim/Codex transport format and native OpenCode local/remote format. It will be normalized automatically.",
+        "Raw MCP config accepts both MultiAGENT/Codex transport format and native OpenCode local/remote format. It will be normalized automatically.",
     ));
     raw_hint.set_xalign(0.0);
     raw_hint.set_wrap(true);
@@ -1188,7 +1188,7 @@ pub(crate) fn build_settings_page(
     let root = gtk::Box::new(gtk::Orientation::Vertical, 12);
 
     let info = gtk::Label::new(Some(
-        "Global catalog: Skills and MCP servers are saved in Enzim Coder SQLite and can be assigned per profile.\n\nStopped profiles are read-only here. Start a profile first to change its assignments. Skill assignment is materialized into the selected runtime profile; MCP assignment is applied through the active runtime backend.",
+        "Global catalog: Skills and MCP servers are saved in MultiAGENT SQLite and can be assigned per profile.\n\nStopped profiles are read-only here. Start a profile first to change its assignments. Skill assignment is materialized into the selected runtime profile; MCP assignment is applied through the active runtime backend.",
     ));
     info.set_xalign(0.0);
     info.set_wrap(true);

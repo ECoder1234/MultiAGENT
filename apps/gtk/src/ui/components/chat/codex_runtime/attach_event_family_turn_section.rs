@@ -137,6 +137,9 @@
                             turn_ui.in_progress = false;
                             turn_ui.runtime_status_text = None;
                             turn_ui.pending_items.clear();
+                            for generic_ui in turn_ui.generic_item_widgets.values() {
+                                generic_ui.set_running(false);
+                            }
                             super::message_render::set_active_action_section_wave(
                                 &turn_ui.body_box,
                                 false,

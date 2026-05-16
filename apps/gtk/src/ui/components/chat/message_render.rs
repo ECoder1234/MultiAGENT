@@ -238,7 +238,11 @@ fn process_action_append_queue() -> gtk::glib::ControlFlow {
     })
 }
 
-fn enqueue_action_append(body_box: &gtk::Box, action_ui: &ActionSectionUi, revealer: &gtk::Revealer) {
+fn enqueue_action_append(
+    body_box: &gtk::Box,
+    action_ui: &ActionSectionUi,
+    revealer: &gtk::Revealer,
+) {
     ACTION_APPEND_QUEUE.with(|state_cell| {
         let mut state = state_cell.borrow_mut();
         state.queue.push_back(PendingActionAppend {
@@ -690,7 +694,9 @@ fn set_command_output_revealed_state(
         let output = output_text.borrow();
         set_plain_label_text(&output_label, output.as_str());
         details.output_revealer.set_reveal_child(true);
-        details.output_chevron.set_icon_name(Some("pan-down-symbolic"));
+        details
+            .output_chevron
+            .set_icon_name(Some("pan-down-symbolic"));
         set_plain_label_text(&details.output_toggle_label, "Hide output");
         return;
     }
@@ -699,7 +705,9 @@ fn set_command_output_revealed_state(
         set_plain_label_text(output_label, "");
     }
     details.output_revealer.set_reveal_child(false);
-    details.output_chevron.set_icon_name(Some("pan-end-symbolic"));
+    details
+        .output_chevron
+        .set_icon_name(Some("pan-end-symbolic"));
     set_plain_label_text(
         &details.output_toggle_label,
         if *details.output_toggle_enabled.borrow() {
@@ -852,7 +860,11 @@ fn build_tool_call_details_ui(
         output_label,
     };
 
-    refresh_tool_call_output_widgets(&details.details_revealer, &details.output_label, output_text);
+    refresh_tool_call_output_widgets(
+        &details.details_revealer,
+        &details.output_label,
+        output_text,
+    );
     details
 }
 
@@ -964,7 +976,11 @@ fn refresh_generic_item_details_widgets(
         output_label.set_visible(show_output);
         output_scroll.set_visible(show_output);
         drop(output);
-        sync_thinking_output_scroll_layout(output_label, output_scroll, output_text.borrow().trim());
+        sync_thinking_output_scroll_layout(
+            output_label,
+            output_scroll,
+            output_text.borrow().trim(),
+        );
     } else if details_revealer.reveals_child() {
         set_plain_label_text(output_label, output.as_str());
         output_label.set_visible(show_output);
@@ -1068,7 +1084,8 @@ impl CommandUi {
         }
         if running {
             let text = self.headline_text.borrow().clone();
-            self.running_wave_frames.replace(build_wave_markup_frames(&text));
+            self.running_wave_frames
+                .replace(build_wave_markup_frames(&text));
             let header_label = self.header_label.clone();
             let headline_text = self.headline_text.clone();
             let wave_phase = self.running_wave_phase.clone();
@@ -1257,7 +1274,11 @@ impl GenericItemUi {
             return;
         };
         let output = self.output_text.borrow();
-        sync_thinking_output_scroll_layout(&details.output_label, &details.output_scroll, output.trim());
+        sync_thinking_output_scroll_layout(
+            &details.output_label,
+            &details.output_scroll,
+            output.trim(),
+        );
     }
 
     fn schedule_output_scroll_layout_sync(&self) {
@@ -1308,7 +1329,8 @@ impl GenericItemUi {
         }
         if running {
             let text = self.headline_text.borrow().clone();
-            self.running_wave_frames.replace(build_wave_markup_frames(&text));
+            self.running_wave_frames
+                .replace(build_wave_markup_frames(&text));
             let title_label = self.title_label.clone();
             let headline_text = self.headline_text.clone();
             let wave_phase = self.running_wave_phase.clone();
@@ -1387,7 +1409,8 @@ impl GenericItemUi {
     pub(super) fn append_output_delta(&self, delta: &str) {
         self.output_text.borrow_mut().push_str(delta);
         self.details_enabled.replace(
-            !self.summary_text.borrow().trim().is_empty() || !self.output_text.borrow().trim().is_empty(),
+            !self.summary_text.borrow().trim().is_empty()
+                || !self.output_text.borrow().trim().is_empty(),
         );
         let Some(details) = self.details_ui.borrow().as_ref().cloned() else {
             return;
@@ -1720,8 +1743,9 @@ fn append_message_content_widget<T: IsA<gtk::Widget> + Clone>(
     row.set_halign(if is_user {
         gtk::Align::End
     } else {
-        gtk::Align::Start
+        gtk::Align::Fill
     });
+    row.set_hexpand(!is_user);
     apply_first_message_top_spacing(messages_box, &row);
 
     append_hover_timestamp(messages_box, &row, content, is_user, timestamp);
@@ -1803,8 +1827,9 @@ pub(super) fn append_hover_timestamp<T: IsA<gtk::Widget>>(
     shell.set_halign(if is_user {
         gtk::Align::End
     } else {
-        gtk::Align::Start
+        gtk::Align::Fill
     });
+    shell.set_hexpand(!is_user);
 
     shell.append(content);
 
@@ -2165,7 +2190,7 @@ mod link_tests {
     #[test]
     fn parses_line_suffix_when_target_exists() {
         let unique = format!(
-            "enzimcoder-link-test-{}-{}.txt",
+            "multiagent-link-test-{}-{}.txt",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -2186,7 +2211,7 @@ mod link_tests {
     #[test]
     fn parses_line_and_column_suffix_when_target_exists() {
         let unique = format!(
-            "enzimcoder-link-test-{}-{}.rs",
+            "multiagent-link-test-{}-{}.rs",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -2207,7 +2232,7 @@ mod link_tests {
     #[test]
     fn parses_hash_line_anchor_when_target_exists() {
         let unique = format!(
-            "enzimcoder-link-test-{}-{}.rs",
+            "multiagent-link-test-{}-{}.rs",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -2228,7 +2253,7 @@ mod link_tests {
     #[test]
     fn parses_hash_line_column_anchor_when_target_exists() {
         let unique = format!(
-            "enzimcoder-link-test-{}-{}.rs",
+            "multiagent-link-test-{}-{}.rs",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -2305,7 +2330,10 @@ impl StreamingMarkdownUi {
             crate::ui::components::chat::markdown::set_markdown(&self.tail_label, "");
             self.tail_label.set_visible(false);
         } else {
-            crate::ui::components::chat::markdown::set_markdown(&self.tail_label, &blocks.tail_block);
+            crate::ui::components::chat::markdown::set_markdown(
+                &self.tail_label,
+                &blocks.tail_block,
+            );
             self.tail_label.set_visible(true);
         }
     }
@@ -2322,7 +2350,9 @@ impl StreamingMarkdownUi {
     }
 }
 
-pub(super) fn create_streaming_markdown_segment_revealed(body_box: &gtk::Box) -> StreamingMarkdownUi {
+pub(super) fn create_streaming_markdown_segment_revealed(
+    body_box: &gtk::Box,
+) -> StreamingMarkdownUi {
     set_active_action_section_wave(body_box, false);
     let text_section = ensure_text_section(body_box);
     let root = gtk::Box::new(gtk::Orientation::Vertical, 4);
@@ -2962,8 +2992,7 @@ pub(super) fn create_command_widget(command: &str) -> (gtk::Box, CommandUi) {
     let running_wave_source: Rc<RefCell<Option<gtk::glib::SourceId>>> = Rc::new(RefCell::new(None));
     let running_wave_phase: Rc<RefCell<f64>> = Rc::new(RefCell::new(0.0));
     let running_wave_frames: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
-    let output_flush_source: Rc<RefCell<Option<gtk::glib::SourceId>>> =
-        Rc::new(RefCell::new(None));
+    let output_flush_source: Rc<RefCell<Option<gtk::glib::SourceId>>> = Rc::new(RefCell::new(None));
 
     {
         let running_wave_source = running_wave_source.clone();
@@ -3044,8 +3073,7 @@ pub(super) fn create_tool_call_widget(tool_name: &str, arguments: &str) -> (gtk:
     let arguments_text: Rc<RefCell<String>> = Rc::new(RefCell::new(arguments.to_string()));
     let details_ui: Rc<RefCell<Option<ToolCallDetailsUi>>> = Rc::new(RefCell::new(None));
     let output_text: Rc<RefCell<String>> = Rc::new(RefCell::new(String::new()));
-    let output_flush_source: Rc<RefCell<Option<gtk::glib::SourceId>>> =
-        Rc::new(RefCell::new(None));
+    let output_flush_source: Rc<RefCell<Option<gtk::glib::SourceId>>> = Rc::new(RefCell::new(None));
 
     {
         let output_flush_source = output_flush_source.clone();
@@ -3302,7 +3330,9 @@ pub(super) fn create_reasoning_widget() -> (gtk::Box, GenericItemUi) {
         let output_label = details.output_label.clone();
         let output_scroll = details.output_scroll.clone();
         let output_text = generic_ui.output_text.clone();
-        details.output_scroll.connect_notify_local(Some("width"), move |_, _| {
+        details
+            .output_scroll
+            .connect_notify_local(Some("width"), move |_, _| {
                 schedule_thinking_output_scroll_layout_sync(
                     output_label.clone(),
                     output_scroll.clone(),
@@ -3315,7 +3345,9 @@ pub(super) fn create_reasoning_widget() -> (gtk::Box, GenericItemUi) {
         let output_label = details.output_label.clone();
         let output_scroll = details.output_scroll.clone();
         let output_text = generic_ui.output_text.clone();
-        details.output_label.connect_notify_local(Some("width"), move |_, _| {
+        details
+            .output_label
+            .connect_notify_local(Some("width"), move |_, _| {
                 schedule_thinking_output_scroll_layout_sync(
                     output_label.clone(),
                     output_scroll.clone(),

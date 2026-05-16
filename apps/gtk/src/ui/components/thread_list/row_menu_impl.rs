@@ -261,6 +261,7 @@ fn thread_row(
         let completion_icon = completion_icon.clone();
         let select_click = gtk::GestureClick::builder().button(1).build();
         select_click.connect_released(move |_, _, _, _| {
+            crate::ui::settings::force_single_thread_mode(db.as_ref());
             active_workspace_path_for_select.replace(Some(workspace_path.clone()));
 
             if let Some(root) = row_for_select.root() {

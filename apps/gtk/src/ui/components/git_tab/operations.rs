@@ -922,7 +922,7 @@ pub(super) fn create_askpass_script() -> Result<PathBuf, String> {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_nanos())
         .unwrap_or(0);
-    let file_name = format!("enzimcoder-git-askpass-{}-{}.sh", std::process::id(), now);
+    let file_name = format!("multiagent-git-askpass-{}-{}.sh", std::process::id(), now);
     let script_path = std::env::temp_dir().join(file_name);
 
     let contents = "#!/bin/sh\ncase \"$1\" in\n  *Username*) printf '%s\\n' \"$GIT_USERNAME\" ;;\n  *) printf '%s\\n' \"$GIT_PASSWORD\" ;;\nesac\n";

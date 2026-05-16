@@ -13,7 +13,7 @@ use std::thread;
 use std::time::Duration;
 
 static ONBOARDING_GUIDE_STEP: AtomicU8 = AtomicU8::new(0);
-pub(crate) const SIDEBAR_WIDTH: i32 = 180;
+pub(crate) const SIDEBAR_WIDTH: i32 = 236;
 
 pub(crate) fn set_onboarding_guide_step(step: u8) {
     ONBOARDING_GUIDE_STEP.store(step, Ordering::Relaxed);
@@ -114,6 +114,256 @@ fn build_onboarding_mock_workspaces() -> gtk::Box {
     root
 }
 
+fn clear_box_children(box_widget: &gtk::Box) {
+    while let Some(child) = box_widget.first_child() {
+        box_widget.remove(&child);
+    }
+}
+
+fn switch_main_view(source: &gtk::Widget, stack_name: &'static str) {
+    let Some(root) = source.root() else {
+        return;
+    };
+    let root_widget: gtk::Widget = root.upcast();
+    let Some(stack_widget) =
+        widget_tree::find_widget_by_name(&root_widget, "main-content-view-stack")
+    else {
+        return;
+    };
+    if let Ok(stack) = stack_widget.downcast::<adw::ViewStack>() {
+        stack.set_visible_child_name(stack_name);
+    }
+}
+
+fn build_nav_item(
+    icon_name: &str,
+    label: &str,
+    stack_name: &'static str,
+    active: bool,
+) -> gtk::Box {
+    let item = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    item.add_css_class("sidebar-nav-item");
+    if active {
+        item.add_css_class("sidebar-nav-item-active");
+    }
+    item.set_can_target(true);
+    item.set_focusable(false);
+
+    let icon = gtk::Image::from_icon_name(icon_name);
+    icon.set_pixel_size(14);
+    icon.add_css_class("sidebar-nav-icon");
+    item.append(&icon);
+
+    let text = gtk::Label::new(Some(label));
+    text.add_css_class("sidebar-nav-label");
+    text.set_xalign(0.0);
+    text.set_hexpand(true);
+    item.append(&text);
+
+    let click_target = item.clone();
+    let click = gtk::GestureClick::builder().button(1).build();
+    click.connect_released(move |_, _, _, _| {
+        switch_main_view(&click_target.clone().upcast::<gtk::Widget>(), stack_name);
+    });
+    item.add_controller(click);
+
+    item
+}
+
+fn build_nav_section() -> gtk::Box {
+    let nav = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    nav.add_css_class("sidebar-glass-section");
+    nav.add_css_class("sidebar-nav-section");
+    nav.append(&build_nav_item("chat-new-symbolic", "Chat", "chat", true));
+    nav.append(&build_nav_item("git-symbolic", "Review", "git", false));
+    nav.append(&build_nav_item(
+        "terminal-symbolic",
+        "Actions",
+        "actions",
+        false,
+    ));
+    nav
+}
+
+fn profile_status_label(raw: &str) -> (&'static str, &'static str) {
+    let status = raw.trim().to_ascii_lowercase();
+    if status == "running" {
+        ("running", "running")
+    } else if status == "starting" || status == "auth" || status == "pending" {
+        ("waiting", "waiting")
+    } else {
+        ("idle", "idle")
+    }
+}
+
+fn build_agent_row(name: &str, backend: &str, status: &str) -> gtk::Box {
+    let (label, css_suffix) = profile_status_label(status);
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    row.add_css_class("agent-status-row");
+
+    let dot = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    dot.add_css_class("agent-status-dot");
+    dot.add_css_class(&format!("agent-status-{css_suffix}"));
+    row.append(&dot);
+
+    let text = gtk::Box::new(gtk::Orientation::Vertical, 1);
+    text.set_hexpand(true);
+    let title = gtk::Label::new(Some(name));
+    title.add_css_class("agent-status-title");
+    title.set_xalign(0.0);
+    title.set_ellipsize(gtk::pango::EllipsizeMode::End);
+    let subtitle = gtk::Label::new(Some(&format!("{backend} · {label}")));
+    subtitle.add_css_class("agent-status-subtitle");
+    subtitle.set_xalign(0.0);
+    subtitle.set_ellipsize(gtk::pango::EllipsizeMode::End);
+    text.append(&title);
+    text.append(&subtitle);
+    row.append(&text);
+
+    row
+}
+
+fn refresh_agents_list(db: &AppDb, list: &gtk::Box) {
+    clear_box_children(list);
+    let profiles = db.list_codex_profiles().unwrap_or_default();
+    if profiles.is_empty() {
+        let empty = gtk::Label::new(Some("No agents configured"));
+        empty.add_css_class("sidebar-muted-row");
+        empty.set_xalign(0.0);
+        list.append(&empty);
+        return;
+    }
+
+    for profile in profiles.into_iter().take(5) {
+        let name = if profile.name.trim().is_empty() {
+            "Agent"
+        } else {
+            profile.name.trim()
+        };
+        list.append(&build_agent_row(
+            name,
+            &profile.backend_kind,
+            &profile.status,
+        ));
+    }
+}
+
+fn build_agents_panel(db: Rc<AppDb>) -> gtk::Box {
+    let panel = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    panel.add_css_class("sidebar-glass-section");
+    panel.add_css_class("agents-panel");
+
+    let title = gtk::Label::new(Some("Active Agents"));
+    title.add_css_class("section-title");
+    title.set_xalign(0.0);
+    panel.append(&title);
+
+    let list = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    panel.append(&list);
+    refresh_agents_list(&db, &list);
+
+    {
+        let db = db.clone();
+        let list = list.clone();
+        gtk::glib::timeout_add_local(Duration::from_millis(1400), move || {
+            if list.root().is_none() {
+                return gtk::glib::ControlFlow::Break;
+            }
+            refresh_agents_list(&db, &list);
+            gtk::glib::ControlFlow::Continue
+        });
+    }
+
+    panel
+}
+
+fn build_pinned_section() -> gtk::Box {
+    let pinned = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    pinned.add_css_class("sidebar-glass-section");
+    pinned.add_css_class("sidebar-pinned-section");
+
+    let title = gtk::Label::new(Some("Pinned"));
+    title.add_css_class("section-title");
+    title.set_xalign(0.0);
+    pinned.append(&title);
+    pinned.append(&build_nav_item("git-symbolic", "Diff review", "git", false));
+    pinned.append(&build_nav_item(
+        "terminal-symbolic",
+        "Run actions",
+        "actions",
+        false,
+    ));
+    pinned
+}
+
+fn refresh_session_history(db: &AppDb, list: &gtk::Box) {
+    clear_box_children(list);
+    let mut threads = Vec::new();
+    for workspace in db.list_workspaces_with_threads().unwrap_or_default() {
+        for thread in workspace.threads {
+            threads.push((
+                thread.updated_at,
+                thread.title,
+                workspace.workspace.name.clone(),
+            ));
+        }
+    }
+    threads.sort_by(|left, right| right.0.cmp(&left.0));
+    if threads.is_empty() {
+        let empty = gtk::Label::new(Some("No sessions yet"));
+        empty.add_css_class("sidebar-muted-row");
+        empty.set_xalign(0.0);
+        list.append(&empty);
+        return;
+    }
+    for (_, title, workspace) in threads.into_iter().take(5) {
+        let row = gtk::Box::new(gtk::Orientation::Vertical, 1);
+        row.add_css_class("session-history-row");
+        let title_label = gtk::Label::new(Some(if title.trim().is_empty() {
+            "Untitled session"
+        } else {
+            title.trim()
+        }));
+        title_label.add_css_class("session-history-title");
+        title_label.set_xalign(0.0);
+        title_label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        let workspace_label = gtk::Label::new(Some(&workspace));
+        workspace_label.add_css_class("session-history-subtitle");
+        workspace_label.set_xalign(0.0);
+        workspace_label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        row.append(&title_label);
+        row.append(&workspace_label);
+        list.append(&row);
+    }
+}
+
+fn build_session_history_panel(db: Rc<AppDb>) -> gtk::Box {
+    let panel = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    panel.add_css_class("sidebar-glass-section");
+    panel.add_css_class("session-history-panel");
+    let title = gtk::Label::new(Some("Session History"));
+    title.add_css_class("section-title");
+    title.set_xalign(0.0);
+    panel.append(&title);
+
+    let list = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    panel.append(&list);
+    refresh_session_history(&db, &list);
+    {
+        let db = db.clone();
+        let list = list.clone();
+        gtk::glib::timeout_add_local(Duration::from_millis(1800), move || {
+            if list.root().is_none() {
+                return gtk::glib::ControlFlow::Break;
+            }
+            refresh_session_history(&db, &list);
+            gtk::glib::ControlFlow::Continue
+        });
+    }
+
+    panel
+}
+
 pub fn build_sidebar(
     window: &adw::ApplicationWindow,
     db: Rc<AppDb>,
@@ -138,7 +388,7 @@ pub fn build_sidebar(
     title_box.set_halign(gtk::Align::Start);
     title_box.set_valign(gtk::Align::Center);
 
-    let title = gtk::Label::new(Some("Enzim Coder"));
+    let title = gtk::Label::new(Some(crate::app_name()));
     title.add_css_class("app-brand-title");
     title.set_xalign(0.0);
     title.set_valign(gtk::Align::Center);
@@ -158,13 +408,18 @@ pub fn build_sidebar(
     root.set_hexpand(false);
     root.set_halign(gtk::Align::Fill);
 
+    root.append(&build_nav_section());
+    root.append(&build_agents_panel(db.clone()));
+    root.append(&build_pinned_section());
+    root.append(&build_session_history_panel(db.clone()));
+
     let workspaces_header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     workspaces_header.set_margin_start(4);
     workspaces_header.set_margin_end(2);
     workspaces_header.set_margin_top(2);
     workspaces_header.set_margin_bottom(0);
 
-    let workspaces_label = gtk::Label::new(Some("Workspaces"));
+    let workspaces_label = gtk::Label::new(Some("Projects"));
     workspaces_label.add_css_class("section-title");
     workspaces_label.set_xalign(0.0);
     workspaces_label.set_hexpand(true);
@@ -529,6 +784,7 @@ fn build_workspace(
         let active_workspace_path = active_workspace_path.clone();
         let workspace_path = workspace_path.clone();
         Rc::new(move || {
+            crate::ui::settings::force_single_thread_mode(db.as_ref());
             active_workspace_path.replace(Some(workspace_path.clone()));
             if !thread_list.is_expanded() {
                 thread_list.set_expanded(true);
@@ -608,16 +864,19 @@ fn build_workspace(
                         .map(str::trim)
                         .filter(|value| !value.is_empty())
                     {
-                        if let Err(err) = crate::services::app::worktree::stop_worktree_checkout(path) {
+                        if let Err(err) =
+                            crate::services::app::worktree::stop_worktree_checkout(path)
+                        {
                             errors.push(format!(
                                 "worktree cleanup failed for thread {}: {err}",
                                 thread.id
                             ));
                         }
                     }
-                    if let Err(err) =
-                        crate::services::app::restore::clear_thread_restore_data(db.as_ref(), thread.id)
-                    {
+                    if let Err(err) = crate::services::app::restore::clear_thread_restore_data(
+                        db.as_ref(),
+                        thread.id,
+                    ) {
                         errors.push(format!(
                             "checkpoint cleanup failed for thread {}: {err}",
                             thread.id

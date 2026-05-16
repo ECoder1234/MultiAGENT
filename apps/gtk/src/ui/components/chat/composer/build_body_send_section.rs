@@ -224,12 +224,7 @@
                         &queued_model_id,
                         &queued_effort,
                     );
-                    let mentions_for_turn: Vec<(String, String)> = selected_mentions
-                        .borrow()
-                        .iter()
-                        .filter(|mention| text.contains(&format!("@{}", mention.display)))
-                        .map(|mention| (mention.display.clone(), mention.path.clone()))
-                        .collect();
+                    let mentions_for_turn = mentions_for_text(&text, &selected_mentions);
                     let queued_image_paths: Vec<String> =
                         attached_images.iter().map(|image| image.path.clone()).collect();
                     let queued_summary =
@@ -830,12 +825,7 @@
                 collaboration_mode_payload(&collaboration_mode, &model_id, &effort);
             let send_error_tx_for_thread = send_error_tx.clone();
             let turn_started_ui_tx = turn_started_ui_tx.clone();
-            let mentions_for_turn: Vec<(String, String)> = selected_mentions
-                .borrow()
-                .iter()
-                .filter(|mention| text.contains(&format!("@{}", mention.display)))
-                .map(|mention| (mention.display.clone(), mention.path.clone()))
-                .collect();
+            let mentions_for_turn = mentions_for_text(&text, &selected_mentions);
             let image_paths_for_turn: Vec<String> =
                 attached_images.iter().map(|image| image.path.clone()).collect();
             let baseline_thread_id = thread_id.clone();
@@ -1067,7 +1057,7 @@
                     collaboration_mode_payload(&queued_mode, &queued_model_id, &queued_effort);
 
                 let queued_summary =
-                    format!("[telegram] {}", send_payload_summary_from_paths(&prompt.text, &[]));
+                    format!("[discord] {}", send_payload_summary_from_paths(&prompt.text, &[]));
                 let queued_id = {
                     let mut next_id = queued_next_id.borrow_mut();
                     let current = *next_id;
@@ -1078,7 +1068,7 @@
                     remote_prompt_id: Some(prompt.id),
                     text: prompt.text.clone(),
                     summary: queued_summary.clone(),
-                    mentions: Vec::new(),
+                    mentions: mentions_for_text(&prompt.text, &selected_mentions),
                     images: Vec::new(),
                     expected_thread_id: Some(active_thread_id.clone()),
                     model_id: queued_model_id.clone(),

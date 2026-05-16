@@ -150,6 +150,7 @@ impl VoiceToTextConfig {
 #[allow(dead_code)]
 pub struct RemoteTelegramAccountRecord {
     pub id: i64,
+    pub provider: String,
     pub bot_token: String,
     pub telegram_user_id: String,
     pub telegram_chat_id: String,

@@ -9,8 +9,8 @@ DIST_DIR="${DIST_DIR:-${ROOT_DIR}/dist}"
 BUILD_CACHE_DIR="${ROOT_DIR}/.appimage-build"
 CARGO_HOME="${CARGO_HOME:-${BUILD_CACHE_DIR}/cargo-home}"
 HOME="${HOME:-${BUILD_CACHE_DIR}/home}"
-APPIMAGE_OUTPUT="${DIST_DIR}/EnzimCoder-${VERSION}-x86_64.AppImage"
-APPIMAGE_UPDATE_INFORMATION="${APPIMAGE_UPDATE_INFORMATION:-gh-releases-zsync|enz1m|enzim-coder|latest|EnzimCoder-*-x86_64.AppImage.zsync}"
+APPIMAGE_OUTPUT="${DIST_DIR}/MultiAGENT-${VERSION}-x86_64.AppImage"
+APPIMAGE_UPDATE_INFORMATION="${APPIMAGE_UPDATE_INFORMATION:-}"
 CUSTOM_APPRUN_SOURCE="${ROOT_DIR}/packaging/appimage/AppRun.c"
 CUSTOM_APPRUN_BUILD="${BUILD_CACHE_DIR}/AppRun"
 HOST_LOADER="${APPIMAGE_HOST_LOADER:-/lib64/ld-linux-x86-64.so.2}"
@@ -59,13 +59,19 @@ rm -rf \
   "${ROOT_DIR}/AppDir/var/cache/apt" \
   "${ROOT_DIR}/AppDir/var/lib/apt"
 
-APPIMAGE_EXTRACT_AND_RUN=1 "${APPIMAGE_TOOL:-/opt/appimagetool.AppImage}" \
-  -u "${APPIMAGE_UPDATE_INFORMATION}" \
-  "${ROOT_DIR}/AppDir" \
-  "${APPIMAGE_OUTPUT}"
+if [ -n "${APPIMAGE_UPDATE_INFORMATION}" ]; then
+  APPIMAGE_EXTRACT_AND_RUN=1 "${APPIMAGE_TOOL:-/opt/appimagetool.AppImage}" \
+    -u "${APPIMAGE_UPDATE_INFORMATION}" \
+    "${ROOT_DIR}/AppDir" \
+    "${APPIMAGE_OUTPUT}"
+else
+  APPIMAGE_EXTRACT_AND_RUN=1 "${APPIMAGE_TOOL:-/opt/appimagetool.AppImage}" \
+    "${ROOT_DIR}/AppDir" \
+    "${APPIMAGE_OUTPUT}"
+fi
 
-if [ -f "${ROOT_DIR}/EnzimCoder-${VERSION}-x86_64.AppImage" ]; then
-  mv -f "${ROOT_DIR}/EnzimCoder-${VERSION}-x86_64.AppImage" "${APPIMAGE_OUTPUT}"
+if [ -f "${ROOT_DIR}/MultiAGENT-${VERSION}-x86_64.AppImage" ]; then
+  mv -f "${ROOT_DIR}/MultiAGENT-${VERSION}-x86_64.AppImage" "${APPIMAGE_OUTPUT}"
 fi
 
 if [ ! -f "${APPIMAGE_OUTPUT}" ]; then

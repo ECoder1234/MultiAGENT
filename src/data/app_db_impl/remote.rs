@@ -7,7 +7,7 @@ impl AppDb {
             self.get_setting(crate::remote::SETTING_REMOTE_MODE_ENABLED)
                 .ok()
                 .flatten(),
-            false,
+            true,
         )
     }
 
@@ -50,7 +50,7 @@ impl AppDb {
 
         let conn = self.conn.borrow();
         let mut stmt = conn.prepare(
-            "SELECT id, bot_token, telegram_user_id, telegram_chat_id, telegram_username, linked_at, updated_at
+            "SELECT id, provider, bot_token, telegram_user_id, telegram_chat_id, telegram_username, linked_at, updated_at
              FROM remote_telegram_accounts
              ORDER BY updated_at DESC, id DESC
              LIMIT 1",
@@ -59,12 +59,13 @@ impl AppDb {
         if let Some(row) = rows.next()? {
             let account = RemoteTelegramAccountRecord {
                 id: row.get(0)?,
-                bot_token: row.get(1)?,
-                telegram_user_id: row.get(2)?,
-                telegram_chat_id: row.get(3)?,
-                telegram_username: row.get(4)?,
-                linked_at: row.get(5)?,
-                updated_at: row.get(6)?,
+                provider: row.get(1)?,
+                bot_token: row.get(2)?,
+                telegram_user_id: row.get(3)?,
+                telegram_chat_id: row.get(4)?,
+                telegram_username: row.get(5)?,
+                linked_at: row.get(6)?,
+                updated_at: row.get(7)?,
             };
             drop(rows);
             drop(stmt);
@@ -81,7 +82,7 @@ impl AppDb {
     ) -> rusqlite::Result<Option<RemoteTelegramAccountRecord>> {
         let conn = self.conn.borrow();
         let mut stmt = conn.prepare(
-            "SELECT id, bot_token, telegram_user_id, telegram_chat_id, telegram_username, linked_at, updated_at
+            "SELECT id, provider, bot_token, telegram_user_id, telegram_chat_id, telegram_username, linked_at, updated_at
              FROM remote_telegram_accounts
              WHERE id = ?1
              LIMIT 1",
@@ -90,12 +91,13 @@ impl AppDb {
         if let Some(row) = rows.next()? {
             Ok(Some(RemoteTelegramAccountRecord {
                 id: row.get(0)?,
-                bot_token: row.get(1)?,
-                telegram_user_id: row.get(2)?,
-                telegram_chat_id: row.get(3)?,
-                telegram_username: row.get(4)?,
-                linked_at: row.get(5)?,
-                updated_at: row.get(6)?,
+                provider: row.get(1)?,
+                bot_token: row.get(2)?,
+                telegram_user_id: row.get(3)?,
+                telegram_chat_id: row.get(4)?,
+                telegram_username: row.get(5)?,
+                linked_at: row.get(6)?,
+                updated_at: row.get(7)?,
             }))
         } else {
             Ok(None)
@@ -109,16 +111,36 @@ impl AppDb {
         telegram_chat_id: &str,
         telegram_username: Option<&str>,
     ) -> rusqlite::Result<RemoteTelegramAccountRecord> {
+        self.upsert_remote_connection(
+            crate::remote::REMOTE_PROVIDER_DISCORD,
+            bot_token,
+            telegram_user_id,
+            telegram_chat_id,
+            telegram_username,
+        )
+    }
+
+    pub fn upsert_remote_connection(
+        &self,
+        provider: &str,
+        bot_token: &str,
+        telegram_user_id: &str,
+        telegram_chat_id: &str,
+        telegram_username: Option<&str>,
+    ) -> rusqlite::Result<RemoteTelegramAccountRecord> {
         let now = unix_now();
+        let provider = crate::remote::normalize_remote_provider(provider);
         self.conn.borrow_mut().execute(
             "INSERT INTO remote_telegram_accounts(
-                bot_token, telegram_user_id, telegram_chat_id, telegram_username, linked_at, updated_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+                provider, bot_token, telegram_user_id, telegram_chat_id, telegram_username, linked_at, updated_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
             ON CONFLICT(telegram_user_id, telegram_chat_id) DO UPDATE SET
+                provider = excluded.provider,
                 bot_token = excluded.bot_token,
                 telegram_username = excluded.telegram_username,
                 updated_at = excluded.updated_at",
             params![
+                provider,
                 bot_token.trim(),
                 telegram_user_id.trim(),
                 telegram_chat_id.trim(),
@@ -129,22 +151,28 @@ impl AppDb {
 
         let conn = self.conn.borrow();
         let mut stmt = conn.prepare(
-            "SELECT id, bot_token, telegram_user_id, telegram_chat_id, telegram_username, linked_at, updated_at
+            "SELECT id, provider, bot_token, telegram_user_id, telegram_chat_id, telegram_username, linked_at, updated_at
              FROM remote_telegram_accounts
-             WHERE telegram_user_id = ?1
-               AND telegram_chat_id = ?2
+             WHERE provider = ?1
+               AND telegram_user_id = ?2
+               AND telegram_chat_id = ?3
              LIMIT 1",
         )?;
-        let mut rows = stmt.query(params![telegram_user_id.trim(), telegram_chat_id.trim()])?;
+        let mut rows = stmt.query(params![
+            provider,
+            telegram_user_id.trim(),
+            telegram_chat_id.trim()
+        ])?;
         if let Some(row) = rows.next()? {
             let account = RemoteTelegramAccountRecord {
                 id: row.get(0)?,
-                bot_token: row.get(1)?,
-                telegram_user_id: row.get(2)?,
-                telegram_chat_id: row.get(3)?,
-                telegram_username: row.get(4)?,
-                linked_at: row.get(5)?,
-                updated_at: row.get(6)?,
+                provider: row.get(1)?,
+                bot_token: row.get(2)?,
+                telegram_user_id: row.get(3)?,
+                telegram_chat_id: row.get(4)?,
+                telegram_username: row.get(5)?,
+                linked_at: row.get(6)?,
+                updated_at: row.get(7)?,
             };
             drop(rows);
             drop(stmt);

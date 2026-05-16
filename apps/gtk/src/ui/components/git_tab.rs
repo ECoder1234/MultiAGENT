@@ -105,6 +105,18 @@ pub fn build_git_tab(
     selected_delta_box.append(&selected_added_label);
     selected_delta_box.append(&selected_removed_label);
 
+    let select_all_button = gtk::Button::with_label("All");
+    select_all_button.set_has_frame(false);
+    select_all_button.add_css_class("app-flat-button");
+    select_all_button.add_css_class("git-tab-selection-button");
+    select_all_button.set_tooltip_text(Some("Select all changed files"));
+
+    let clear_selection_button = gtk::Button::with_label("None");
+    clear_selection_button.set_has_frame(false);
+    clear_selection_button.add_css_class("app-flat-button");
+    clear_selection_button.add_css_class("git-tab-selection-button");
+    clear_selection_button.set_tooltip_text(Some("Clear selected files"));
+
     let refresh_button = gtk::Button::new();
     refresh_button.set_has_frame(false);
     refresh_button.set_icon_name("view-refresh-symbolic");
@@ -114,6 +126,8 @@ pub fn build_git_tab(
 
     header.append(&repo_meta_box);
     header.append(&selected_delta_box);
+    header.append(&select_all_button);
+    header.append(&clear_selection_button);
     header.append(&branch_button);
     header.append(&refresh_button);
 
@@ -121,7 +135,7 @@ pub fn build_git_tab(
     outgoing_card.add_css_class("git-tab-outgoing-card");
 
     let outgoing_header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    let outgoing_title = gtk::Label::new(Some("Ready to Push"));
+    let outgoing_title = gtk::Label::new(Some("Ship Queue"));
     outgoing_title.add_css_class("git-tab-outgoing-title");
     outgoing_title.set_xalign(0.0);
     outgoing_title.set_hexpand(true);
@@ -161,7 +175,7 @@ pub fn build_git_tab(
     let footer = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     footer.add_css_class("git-tab-footer");
 
-    let init_button = gtk::Button::with_label("Initialize Git");
+    let init_button = gtk::Button::with_label("Init Repo");
     init_button.add_css_class("git-tab-init");
 
     let commit_message = gtk::Entry::new();
@@ -169,7 +183,7 @@ pub fn build_git_tab(
     commit_message.set_placeholder_text(Some("Commit message"));
     commit_message.add_css_class("git-tab-commit-message");
 
-    let commit_button = build_action_button("commit-symbolic", "Commit Selected");
+    let commit_button = build_action_button("commit-symbolic", "Stage & Commit");
     commit_button.add_css_class("suggested-action");
     commit_button.add_css_class("git-tab-action-button");
 
@@ -179,7 +193,7 @@ pub fn build_git_tab(
     pull_button.add_css_class("git-tab-action-button");
     let push_button = build_action_button("cloud-deploy-symbolic", "Push");
     push_button.add_css_class("git-tab-action-button");
-    let upstream_button = gtk::Button::with_label("Configure Upstream");
+    let upstream_button = gtk::Button::with_label("Upstream");
 
     footer.append(&init_button);
     footer.append(&commit_message);
@@ -227,12 +241,16 @@ pub fn build_git_tab(
         let branch_button = branch_button.clone();
         let push_button = push_button.clone();
         let upstream_button = upstream_button.clone();
+        let select_all_button = select_all_button.clone();
+        let clear_selection_button = clear_selection_button.clone();
         Rc::new(move || {
             let is_busy = *operation_busy.borrow();
             let snapshot = snapshot_state.borrow().clone();
             let has_repo = snapshot.is_some();
             let no_repo = *no_repo_state.borrow();
-            let has_selected = entries_state.borrow().iter().any(|entry| entry.selected);
+            let entries = entries_state.borrow();
+            let has_entries = !entries.is_empty();
+            let has_selected = entries.iter().any(|entry| entry.selected);
             let has_message = !commit_message.text().trim().is_empty();
             let can_push = snapshot
                 .as_ref()
@@ -249,6 +267,10 @@ pub fn build_git_tab(
 
             init_button.set_visible(no_repo);
             init_button.set_sensitive(!is_busy && no_repo);
+            select_all_button.set_visible(has_repo && has_entries);
+            select_all_button.set_sensitive(!is_busy && has_repo && has_entries);
+            clear_selection_button.set_visible(has_repo && has_entries);
+            clear_selection_button.set_sensitive(!is_busy && has_repo && has_entries);
             commit_button.set_sensitive(!is_busy && has_repo && has_selected && has_message);
             fetch_button.set_visible(has_repo);
             fetch_button.set_sensitive(!is_busy && has_repo);
@@ -464,6 +486,36 @@ pub fn build_git_tab(
             update_actions();
         })
     };
+
+    {
+        let entries_state = entries_state.clone();
+        let render_entries = render_entries.clone();
+        let update_actions = update_actions.clone();
+        let refresh_selected_delta = refresh_selected_delta.clone();
+        select_all_button.connect_clicked(move |_| {
+            for entry in entries_state.borrow_mut().iter_mut() {
+                entry.selected = true;
+            }
+            render_entries();
+            refresh_selected_delta();
+            update_actions();
+        });
+    }
+
+    {
+        let entries_state = entries_state.clone();
+        let render_entries = render_entries.clone();
+        let update_actions = update_actions.clone();
+        let refresh_selected_delta = refresh_selected_delta.clone();
+        clear_selection_button.connect_clicked(move |_| {
+            for entry in entries_state.borrow_mut().iter_mut() {
+                entry.selected = false;
+            }
+            render_entries();
+            refresh_selected_delta();
+            update_actions();
+        });
+    }
 
     let trigger_refresh: Rc<dyn Fn()> = {
         let db = db.clone();

@@ -5,9 +5,29 @@ pub const SETTING_REMOTE_TELEGRAM_ACTIVE_ACCOUNT_ID: &str = "remote_telegram_act
 pub const SETTING_REMOTE_TELEGRAM_POLLING_ENABLED: &str = "remote_telegram_polling_enabled";
 pub const SETTING_REMOTE_TELEGRAM_ACTIVATE_LOCAL_THREAD_ID: &str =
     "remote_telegram_activate_local_thread_id";
-pub const SETTING_REMOTE_TELEGRAM_AUTH_EXPECTED_CODE: &str =
-    "remote_telegram_auth_expected_code";
+pub const SETTING_REMOTE_TELEGRAM_AUTH_EXPECTED_CODE: &str = "remote_telegram_auth_expected_code";
 pub const SETTING_REMOTE_TELEGRAM_AUTH_EXPIRES_AT: &str = "remote_telegram_auth_expires_at";
+
+pub const REMOTE_PROVIDER_DISCORD: &str = "discord";
+pub const REMOTE_PROVIDER_TELEGRAM: &str = "telegram";
+
+pub fn normalize_remote_provider(provider: &str) -> &'static str {
+    if provider
+        .trim()
+        .eq_ignore_ascii_case(REMOTE_PROVIDER_TELEGRAM)
+    {
+        REMOTE_PROVIDER_TELEGRAM
+    } else {
+        REMOTE_PROVIDER_DISCORD
+    }
+}
+
+pub fn remote_provider_label(provider: &str) -> &'static str {
+    match normalize_remote_provider(provider) {
+        REMOTE_PROVIDER_TELEGRAM => "Telegram",
+        _ => "Discord",
+    }
+}
 
 pub fn bool_from_setting(raw: Option<String>, default: bool) -> bool {
     raw.map(|value| value == "1" || value.eq_ignore_ascii_case("true"))

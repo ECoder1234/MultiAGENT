@@ -1,7 +1,7 @@
 use crate::backend::capabilities_for_backend_kind;
 use crate::data::AppDb;
 use crate::data::CodexProfileRecord;
-pub use enzim_core::skill_mcp_support::{
+pub use multiagent_core::skill_mcp_support::{
     CATALOG_KEY, McpCatalogEntry, PolicyKind, ProfileAssignments, SkillCatalogEntry,
     SkillMcpCatalog, assignments_to_value, catalog_to_value, disabled_skill_markers,
     normalize_mcp_key, normalize_skill_key, parse_assignments, parse_catalog,
@@ -21,7 +21,7 @@ pub fn write_skill_assignment_for_profile(
 ) -> Result<(), String> {
     if !supports_skill_assignment_for_backend(&profile.backend_kind) {
         return Err(format!(
-            "{} does not support skill assignment from Enzim yet.",
+            "{} does not support skill assignment from MultiAGENT yet.",
             crate::backend::backend_display_name(&profile.backend_kind)
         ));
     }
@@ -48,7 +48,6 @@ pub fn write_skill_assignment_for_profile(
 
     Ok(())
 }
-
 
 pub fn load_catalog(db: &AppDb) -> SkillMcpCatalog {
     let raw = db
@@ -151,7 +150,6 @@ pub fn remove_catalog_mcp(db: &AppDb, key_or_name: &str) -> Result<(), String> {
     catalog.mcps.retain(|entry| entry.key != key);
     save_catalog(db, &catalog)
 }
-
 
 pub fn load_profile_assignments(db: &AppDb, profile_id: i64) -> ProfileAssignments {
     let raw = db

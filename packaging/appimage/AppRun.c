@@ -192,7 +192,7 @@ static int is_wayland_session(void) {
 }
 
 static int desktop_integration_enabled(void) {
-    const char *disable = getenv("ENZIMCODER_APPIMAGE_NO_DESKTOP_INTEGRATION");
+    const char *disable = getenv("MULTIAGENT_APPIMAGE_NO_DESKTOP_INTEGRATION");
     if (disable != NULL && disable[0] != '\0' && strcmp(disable, "0") != 0) {
         return 0;
     }
@@ -244,13 +244,13 @@ static char *write_desktop_integration(const char *appdir) {
     char *icons_root_dir = path_join(xdg_data_home, "/icons");
     char *icon_dir = path_join(xdg_data_home, "/icons/hicolor/512x512/apps");
     char *scalable_icon_dir = path_join(xdg_data_home, "/icons/hicolor/scalable/apps");
-    char *desktop_path = path_join(applications_dir, "/dev.enzim.EnzimCoder.desktop");
-    char *png_destination = path_join(icon_dir, "/dev.enzim.EnzimCoder.png");
-    char *svg_destination = path_join(scalable_icon_dir, "/dev.enzim.EnzimCoder.svg");
-    char *png_source = path_join(appdir, "/dev.enzim.EnzimCoder.png");
-    char *svg_source = path_join(appdir, "/dev.enzim.EnzimCoder.svg");
+    char *desktop_path = path_join(applications_dir, "/dev.multiagent.multiagent.desktop");
+    char *png_destination = path_join(icon_dir, "/dev.multiagent.multiagent.png");
+    char *svg_destination = path_join(scalable_icon_dir, "/dev.multiagent.multiagent.svg");
+    char *png_source = path_join(appdir, "/dev.multiagent.multiagent.png");
+    char *svg_source = path_join(appdir, "/dev.multiagent.multiagent.svg");
     char *quoted_exec = desktop_quote_exec_arg(appimage_path);
-    char *desktop_tmp = path_join(applications_dir, "/dev.enzim.EnzimCoder.desktop.tmp");
+    char *desktop_tmp = path_join(applications_dir, "/dev.multiagent.multiagent.desktop.tmp");
     char *result = NULL;
 
     if (ensure_directory(applications_dir, 0755) != 0 ||
@@ -280,7 +280,7 @@ static char *write_desktop_integration(const char *appdir) {
         desktop,
         "[Desktop Entry]\n"
         "Type=Application\n"
-        "Name=Enzim Coder\n"
+        "Name=MultiAGENT\n"
         "Comment=Local-first AI coding workspace with threads, Git, and files\n"
         "Exec=%s %%U\n"
         "Icon=%s\n"
@@ -288,8 +288,8 @@ static char *write_desktop_integration(const char *appdir) {
         "Categories=Development;IDE;\n"
         "Keywords=codex;coding;chat;git;workspace;\n"
         "StartupNotify=true\n"
-        "StartupWMClass=dev.enzim.EnzimCoder\n"
-        "X-EnzimCoder-AppImage-Managed=true\n",
+        "StartupWMClass=dev.multiagent.multiagent\n"
+        "X-MultiAGENT-AppImage-Managed=true\n",
         quoted_exec,
         png_destination
     );
@@ -320,7 +320,7 @@ cleanup:
 }
 
 static void maybe_detach_for_terminal_launch(void) {
-    const char *disable_detach = getenv("ENZIMCODER_APPIMAGE_NO_DETACH");
+    const char *disable_detach = getenv("MULTIAGENT_APPIMAGE_NO_DETACH");
     if (disable_detach != NULL && disable_detach[0] != '\0' && strcmp(disable_detach, "0") != 0) {
         return;
     }
@@ -375,8 +375,18 @@ int main(int argc, char **argv) {
     *last_slash = '\0';
 
     char *libpaths = build_libpaths(appdir);
-    char *binary = path_join(appdir, "/usr/bin/enzimcoder");
-    char *desktop_file = path_join(appdir, "/dev.enzim.EnzimCoder.desktop");
+    const char *flavor = getenv("MULTIAGENT_APP_FLAVOR");
+    if (flavor == NULL || flavor[0] == '\0') {
+        for (int i = 1; i < argc; ++i) {
+            if (strcmp(argv[i], "--opencode") == 0) {
+                set_env("MULTIAGENT_APP_FLAVOR", "opencode");
+                flavor = "opencode";
+                break;
+            }
+        }
+    }
+    char *binary = path_join(appdir, "/usr/bin/multiagent");
+    char *desktop_file = path_join(appdir, "/dev.multiagent.multiagent.desktop");
     char *installed_desktop_file = write_desktop_integration(appdir);
 
     set_env("APPDIR", appdir);
@@ -468,10 +478,14 @@ int main(int argc, char **argv) {
     }
 
     child_argv[0] = binary;
+    int child_argc = 1;
     for (int i = 1; i < argc; ++i) {
-        child_argv[i] = argv[i];
+        if (strcmp(argv[i], "--opencode") == 0) {
+            continue;
+        }
+        child_argv[child_argc++] = argv[i];
     }
-    child_argv[argc] = NULL;
+    child_argv[child_argc] = NULL;
 
     if (chdir(appdir) != 0) {
         die("AppRun: failed to chdir to %s", appdir);

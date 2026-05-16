@@ -100,6 +100,22 @@
   padding: 2px 8px;
 }
 
+.git-tab-selection-button {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: alpha(@window_fg_color, 0.72);
+  background: alpha(@window_fg_color, 0.04);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.git-tab-selection-button:hover,
+.git-tab-selection-button:focus-visible {
+  color: alpha(@window_fg_color, 0.94);
+  background: alpha(@window_fg_color, 0.1);
+}
+
 .git-tab-delta-add {
   color: #3ba55d;
   font-size: 0.76rem;

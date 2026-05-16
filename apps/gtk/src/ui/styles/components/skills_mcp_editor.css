@@ -34,11 +34,13 @@ textview#skills-mcp-editor-view text {
 }
 
 textview.skills-mcp-editor-view {
-  font-family: monospace;
-  font-size: 0.76rem;
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.42;
 }
 
 textview#skills-mcp-editor-view {
-  font-family: monospace;
-  font-size: 0.76rem;
+  font-family: "JetBrains Mono", "Ubuntu Sans Mono", "Fira Code", "Cascadia Mono", "Noto Sans Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.42;
 }

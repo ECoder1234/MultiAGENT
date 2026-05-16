@@ -500,6 +500,7 @@ impl ThreadList {
     }
 
     pub fn append_thread(&self, thread: ThreadRecord) -> gtk::ListBoxRow {
+        crate::ui::settings::force_single_thread_mode(self.db.as_ref());
         let listbox_widget: gtk::Widget = self.listbox.clone().upcast();
         let scroll_state = widget_tree::capture_ancestor_vscroll(&listbox_widget);
         let runtime_workspace_path = thread_runtime_workspace_path(&thread, &self.workspace_path);

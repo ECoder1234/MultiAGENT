@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="$(sed -n 's/^version = "\(.*\)"$/\1/p' "${ROOT_DIR}/Cargo.toml" | head -n 1)"
-APPIMAGE_PATH="${1:-${ROOT_DIR}/dist/EnzimCoder-${VERSION}-x86_64.AppImage}"
+APPIMAGE_PATH="${1:-${ROOT_DIR}/dist/MultiAGENT-${VERSION}-x86_64.AppImage}"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "docker is required but not found in PATH." >&2
@@ -65,8 +65,8 @@ fi
 WINDOW_TREE=\"\$(xwininfo -root -tree)\"
 printf '%s\n' \"\$WINDOW_TREE\"
 
-if ! printf '%s\n' \"\$WINDOW_TREE\" | grep -q 'Enzim Coder'; then
-  echo 'AppImage process stayed alive but no Enzim Coder window was found' >&2
+if ! printf '%s\n' \"\$WINDOW_TREE\" | grep -q 'MultiAGENT'; then
+  echo 'AppImage process stayed alive but no MultiAGENT window was found' >&2
   echo '--- STDERR ---' >&2
   sed -n '1,160p' /tmp/app.err >&2
   exit 1

@@ -83,47 +83,12 @@ headerbar.top-tabs-bar .titlebutton.close:active {
   color: alpha(@window_fg_color, 0.96);
 }
 
-headerbar.top-tabs-bar .multiview-toggle-button {
-  min-height: 20px;
-  min-width: 20px;
-  padding: 0;
-  margin: 0 2px 0 0;
-  background: transparent;
-  background-color: transparent;
-  background-image: none;
-  border: none;
-  border-color: transparent;
-  box-shadow: none;
-  color: alpha(@window_fg_color, 0.75);
-}
-
-headerbar.top-tabs-bar .multiview-toggle-button image {
-  color: inherit;
-}
-
-headerbar.top-tabs-bar .multiview-toggle-button:checked {
-  color: @accent_color;
-  background: transparent;
-  background-color: transparent;
-  background-image: none;
-  border: none;
-  border-color: transparent;
-  box-shadow: none;
-}
-
-headerbar.top-tabs-bar .multiview-toggle-button:hover,
-headerbar.top-tabs-bar .multiview-toggle-button:active,
-headerbar.top-tabs-bar .multiview-toggle-button:focus-visible {
-  background: transparent;
-  background-color: transparent;
-  background-image: none;
-  border: none;
-  border-color: transparent;
-  box-shadow: none;
-  color: alpha(@window_fg_color, 0.94);
-}
-
 .top-tabs {
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid alpha(@window_fg_color, 0.1);
+  background: alpha(@window_fg_color, 0.045);
+  box-shadow: inset 0 1px 0 alpha(white, 0.05);
 }
 
 .top-tabs-container {
@@ -132,14 +97,16 @@ headerbar.top-tabs-bar .multiview-toggle-button:focus-visible {
 }
 
 .top-tab {
-  min-height: 24px;
-  padding: 0 3px;
+  min-height: 26px;
+  padding: 0 10px;
   border: none;
-  border-radius: 0;
+  border-radius: 999px;
   background: transparent;
   background-image: none;
   box-shadow: none;
-  color: alpha(@window_fg_color, 0.82);
+  color: alpha(@window_fg_color, 0.74);
+  font-weight: 650;
+  transition: background-color 140ms ease, color 140ms ease;
 }
 
 .top-tab:hover,
@@ -156,27 +123,34 @@ headerbar.top-tabs-bar .multiview-toggle-button:focus-visible {
 
 .top-tab-active {
   color: @accent_color;
-  background: transparent;
-  background-color: transparent;
+  background: alpha(@accent_bg_color, 0.18);
+  background-color: alpha(@accent_bg_color, 0.18);
   background-image: none;
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px alpha(@accent_color, 0.16);
   border-color: transparent;
+}
+
+.top-tab-split-open {
+  color: @accent_color;
+  background: alpha(@accent_bg_color, 0.12);
+  background-color: alpha(@accent_bg_color, 0.12);
+  box-shadow: inset 0 0 0 1px alpha(@accent_color, 0.2);
 }
 
 .top-tab-active:hover,
 .top-tab-active:active,
 .top-tab-active:focus,
 .top-tab-active:focus-visible {
-  background: transparent;
-  background-color: transparent;
+  background: alpha(@accent_bg_color, 0.24);
+  background-color: alpha(@accent_bg_color, 0.24);
   background-image: none;
   box-shadow: none;
   border-color: transparent;
 }
 
 .tab-separator {
-  color: alpha(@window_fg_color, 0.35);
-  margin: 0 3px;
+  color: transparent;
+  margin: 0 1px;
 }
 
 headerbar.top-tabs-bar .topbar-actions-button {
@@ -188,6 +162,14 @@ headerbar.top-tabs-bar .topbar-actions-button {
 }
 
 headerbar.top-tabs-bar .topbar-skills-mcp-button {
+  min-height: 20px;
+  min-width: 20px;
+  padding: 0;
+  margin: 0 2px 0 0;
+  color: alpha(@window_fg_color, 0.76);
+}
+
+headerbar.top-tabs-bar .topbar-browser-split-button {
   min-height: 20px;
   min-width: 20px;
   padding: 0;
@@ -274,12 +256,22 @@ headerbar.top-tabs-bar .topbar-skills-mcp-button:hover {
   color: alpha(@window_fg_color, 0.94);
 }
 
+headerbar.top-tabs-bar .topbar-browser-split-button:hover {
+  color: alpha(@window_fg_color, 0.94);
+}
+
 headerbar.top-tabs-bar .topbar-actions-button.is-active {
   color: alpha(@window_fg_color, 0.94);
 }
 
 headerbar.top-tabs-bar .topbar-skills-mcp-button.is-active {
   color: alpha(@window_fg_color, 0.94);
+}
+
+headerbar.top-tabs-bar .topbar-browser-split-button:checked {
+  color: @accent_color;
+  background: alpha(@accent_bg_color, 0.14);
+  background-color: alpha(@accent_bg_color, 0.14);
 }
 
 headerbar.top-tabs-bar .top-window-close-button:hover,

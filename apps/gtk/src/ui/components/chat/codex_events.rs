@@ -486,7 +486,24 @@ pub(super) fn extract_generic_item_fields(
             let name = cached_title.unwrap_or_else(|| {
                 item.get("toolName")
                     .and_then(Value::as_str)
+                    .or_else(|| item.get("tool_name").and_then(Value::as_str))
+                    .or_else(|| item.get("tool").and_then(Value::as_str))
                     .or_else(|| item.get("name").and_then(Value::as_str))
+                    .or_else(|| {
+                        item.get("toolCall")
+                            .and_then(|v| v.get("toolName"))
+                            .and_then(Value::as_str)
+                    })
+                    .or_else(|| {
+                        item.get("toolCall")
+                            .and_then(|v| v.get("tool"))
+                            .and_then(Value::as_str)
+                    })
+                    .or_else(|| {
+                        item.get("call")
+                            .and_then(|v| v.get("tool"))
+                            .and_then(Value::as_str)
+                    })
                     .unwrap_or("MCP tool")
                     .to_string()
             });
@@ -494,6 +511,16 @@ pub(super) fn extract_generic_item_fields(
                 item.get("arguments")
                     .map(value_to_compact_string)
                     .or_else(|| item.get("input").map(value_to_compact_string))
+                    .or_else(|| {
+                        item.get("toolCall")
+                            .and_then(|v| v.get("arguments"))
+                            .map(value_to_compact_string)
+                    })
+                    .or_else(|| {
+                        item.get("call")
+                            .and_then(|v| v.get("arguments"))
+                            .map(value_to_compact_string)
+                    })
                     .unwrap_or_else(|| "{}".to_string())
             });
             ("MCP Tool".to_string(), name, summary, status, output)
@@ -502,6 +529,8 @@ pub(super) fn extract_generic_item_fields(
             let name = cached_title.unwrap_or_else(|| {
                 item.get("toolName")
                     .and_then(Value::as_str)
+                    .or_else(|| item.get("tool_name").and_then(Value::as_str))
+                    .or_else(|| item.get("tool").and_then(Value::as_str))
                     .or_else(|| item.get("name").and_then(Value::as_str))
                     .unwrap_or("Collab tool")
                     .to_string()

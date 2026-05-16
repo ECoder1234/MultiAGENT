@@ -29,49 +29,6 @@ fn gtk_supports_backdrop_filter() -> bool {
     major > 4 || (major == 4 && minor >= 21)
 }
 
-fn pane_layout_has_saved_thread(db: &AppDb) -> bool {
-    let Ok(Some(raw)) = db.get_setting(settings::SETTING_PANE_LAYOUT_V1) else {
-        return false;
-    };
-    let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&raw) else {
-        return false;
-    };
-    let has_saved_thread = parsed
-        .get("panes")
-        .and_then(serde_json::Value::as_array)
-        .map(|panes| {
-            panes.iter().any(|pane| {
-                pane.get("threadId")
-                    .or_else(|| pane.get("codexThreadId"))
-                    .and_then(serde_json::Value::as_str)
-                    .map(|id| !id.trim().is_empty())
-                    .unwrap_or(false)
-            })
-        })
-        .unwrap_or(false);
-    if has_saved_thread {
-        return true;
-    }
-    let has_pending_profile_thread = db
-        .get_setting("pending_profile_thread_id")
-        .ok()
-        .flatten()
-        .and_then(|value| value.parse::<i64>().ok())
-        .and_then(|thread_id| db.get_thread_record(thread_id).ok().flatten())
-        .map(|thread| {
-            thread
-                .remote_thread_id()
-                .map(|value| value.trim().is_empty())
-                .unwrap_or(true)
-        })
-        .unwrap_or(false);
-    has_pending_profile_thread
-        && parsed
-            .get("panes")
-            .and_then(serde_json::Value::as_array)
-            .is_some_and(|panes| !panes.is_empty())
-}
-
 fn start_account_sync_loop(db: Rc<AppDb>, manager: Rc<CodexProfileManager>) {
     let (tx, rx) = mpsc::channel::<(i64, Option<crate::services::app::runtime::AccountInfo>)>();
     let refresh_in_flight = Rc::new(RefCell::new(false));
@@ -132,7 +89,9 @@ fn start_remote_thread_activation_loop(
 ) {
     crate::ui::scheduler::every(Duration::from_millis(120), move || {
         let Some(raw_thread_id) = db
-            .get_setting(crate::services::app::remote::SETTING_REMOTE_TELEGRAM_ACTIVATE_LOCAL_THREAD_ID)
+            .get_setting(
+                crate::services::app::remote::SETTING_REMOTE_TELEGRAM_ACTIVATE_LOCAL_THREAD_ID,
+            )
             .ok()
             .flatten()
             .filter(|value| !value.trim().is_empty())
@@ -151,6 +110,7 @@ fn start_remote_thread_activation_loop(
             return gtk::glib::ControlFlow::Continue;
         };
 
+        settings::force_single_thread_mode(db.as_ref());
         let _ = db.set_runtime_profile_id(thread.profile_id);
         let _ = db.set_active_profile_id(thread.profile_id);
         let _ = db.set_current_profile_account_identity(
@@ -266,8 +226,9 @@ pub fn build_ui(app: &adw::Application) {
     }
 
     let app_data_dir = crate::services::app::chat::default_app_data_dir();
-    let fresh_start = !app_data_dir.join("enzimcoder.db").exists();
+    let fresh_start = !app_data_dir.join("multiagent.db").exists();
     let db = AppDb::open_default();
+    settings::force_single_thread_mode(&db);
     let _ = db.delete_open_threads_without_turns();
     if db.remote_telegram_active_account().ok().flatten().is_some() {
         crate::services::app::remote::start_background_worker();
@@ -279,6 +240,9 @@ pub fn build_ui(app: &adw::Application) {
 
     let _ = db.ensure_default_codex_profile(&app_data_dir);
     let profile_manager = Rc::new(CodexProfileManager::new(db.clone()));
+    if let Ok(profile) = profile_manager.ensure_profile_for_backend(crate::default_backend_kind()) {
+        let _ = db.set_active_profile_id(profile.id);
+    }
     {
         let profile_manager = profile_manager.clone();
         app.connect_shutdown(move |_| {
@@ -335,7 +299,7 @@ pub fn build_ui(app: &adw::Application) {
 
     let window = adw::ApplicationWindow::builder()
         .application(app)
-        .title("Enzim Coder")
+        .title(crate::app_name())
         .default_width(1200)
         .default_height(780)
         .build();
@@ -388,57 +352,6 @@ pub fn build_ui(app: &adw::Application) {
     }
     root_overlay.set_child(Some(&main_container));
 
-    let remote_overlay = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    remote_overlay.add_css_class("remote-mode-overlay");
-    remote_overlay.set_hexpand(true);
-    remote_overlay.set_vexpand(true);
-    remote_overlay.set_halign(gtk::Align::Fill);
-    remote_overlay.set_valign(gtk::Align::Fill);
-
-    let remote_center = gtk::Box::new(gtk::Orientation::Vertical, 16);
-    remote_center.add_css_class("remote-mode-overlay-content");
-    remote_center.set_halign(gtk::Align::Center);
-    remote_center.set_valign(gtk::Align::Center);
-    remote_center.set_hexpand(true);
-    remote_center.set_vexpand(true);
-
-    let remote_title = gtk::Label::new(Some("Remote mode is On"));
-    remote_title.add_css_class("remote-mode-overlay-title");
-    remote_center.append(&remote_title);
-
-    let remote_hint = gtk::Label::new(Some("Forwarding assistant updates to Telegram."));
-    remote_hint.add_css_class("remote-mode-overlay-hint");
-    remote_hint.set_xalign(0.5);
-    remote_center.append(&remote_hint);
-
-    let remote_close = gtk::Button::new();
-    let remote_close_glyph = gtk::Label::new(Some("X"));
-    remote_close_glyph.add_css_class("remote-mode-overlay-close-glyph");
-    remote_close_glyph.set_xalign(0.5);
-    remote_close_glyph.set_yalign(0.5);
-    remote_close_glyph.set_halign(gtk::Align::Center);
-    remote_close_glyph.set_valign(gtk::Align::Center);
-    remote_close.set_child(Some(&remote_close_glyph));
-    remote_close.set_has_frame(true);
-    remote_close.set_halign(gtk::Align::Center);
-    remote_close.set_valign(gtk::Align::Center);
-    remote_close.set_hexpand(false);
-    remote_close.set_vexpand(false);
-    remote_close.set_size_request(62, 62);
-    remote_close.set_tooltip_text(Some("Turn off remote mode"));
-    remote_close.add_css_class("circular");
-    remote_close.add_css_class("remote-mode-overlay-close");
-    {
-        let db = db.clone();
-        remote_close.connect_clicked(move |_| {
-            let _ = db.set_remote_mode_enabled(false);
-        });
-    }
-    remote_center.append(&remote_close);
-    remote_overlay.append(&remote_center);
-    remote_overlay.set_visible(db.remote_mode_enabled());
-    root_overlay.add_overlay(&remote_overlay);
-
     if fresh_start {
         components::welcome_overlay::attach(
             &root_overlay,
@@ -446,15 +359,6 @@ pub fn build_ui(app: &adw::Application) {
             profile_manager.clone(),
             runtime_profile_id,
         );
-    }
-
-    {
-        let db = db.clone();
-        let remote_overlay = remote_overlay.clone();
-        gtk::glib::timeout_add_local(Duration::from_millis(130), move || {
-            remote_overlay.set_visible(db.remote_mode_enabled());
-            gtk::glib::ControlFlow::Continue
-        });
     }
 
     start_remote_thread_activation_loop(
@@ -466,52 +370,49 @@ pub fn build_ui(app: &adw::Application) {
 
     window.set_content(Some(&root_overlay));
 
-    if !(settings::is_multiview_enabled(&db) && pane_layout_has_saved_thread(&db)) {
-        if let Ok(Some(last_thread_id_str)) = db.get_setting("last_active_thread_id") {
-            if let Ok(last_thread_id) = last_thread_id_str.parse::<i64>() {
-                let mut restored = false;
-                if let Ok(workspaces) = db.list_workspaces_with_threads() {
-                    for workspace in workspaces {
-                        if let Some(thread) =
-                            workspace.threads.iter().find(|t| t.id == last_thread_id)
-                        {
-                            let sidebar_clone = sidebar.clone();
-                            let db_for_restore = db.clone();
-                            let active_workspace_path_clone = active_workspace_path.clone();
-                            let active_thread_id_clone = active_thread_id.clone();
-                            let thread_profile_id = thread.profile_id;
-                            let thread_account_type = thread.remote_account_type_owned();
-                            let thread_account_email = thread.remote_account_email_owned();
-                            let workspace_path = thread
-                                .worktree_path
-                                .as_deref()
-                                .filter(|path| thread.worktree_active && !path.trim().is_empty())
-                                .map(|path| path.to_string())
-                                .unwrap_or_else(|| workspace.workspace.path.clone());
-                            let remote_thread_id = thread.remote_thread_id_owned();
+    if let Ok(Some(last_thread_id_str)) = db.get_setting("last_active_thread_id") {
+        if let Ok(last_thread_id) = last_thread_id_str.parse::<i64>() {
+            let mut restored = false;
+            if let Ok(workspaces) = db.list_workspaces_with_threads() {
+                for workspace in workspaces {
+                    if let Some(thread) = workspace.threads.iter().find(|t| t.id == last_thread_id)
+                    {
+                        let sidebar_clone = sidebar.clone();
+                        let db_for_restore = db.clone();
+                        let active_workspace_path_clone = active_workspace_path.clone();
+                        let active_thread_id_clone = active_thread_id.clone();
+                        let thread_profile_id = thread.profile_id;
+                        let thread_account_type = thread.remote_account_type_owned();
+                        let thread_account_email = thread.remote_account_email_owned();
+                        let workspace_path = thread
+                            .worktree_path
+                            .as_deref()
+                            .filter(|path| thread.worktree_active && !path.trim().is_empty())
+                            .map(|path| path.to_string())
+                            .unwrap_or_else(|| workspace.workspace.path.clone());
+                        let remote_thread_id = thread.remote_thread_id_owned();
 
-                            gtk::glib::idle_add_local_once(move || {
-                                let _ = db_for_restore.set_runtime_profile_id(thread_profile_id);
-                                let _ = db_for_restore.set_active_profile_id(thread_profile_id);
-                                let _ = db_for_restore.set_current_profile_account_identity(
-                                    thread_account_type.as_deref(),
-                                    thread_account_email.as_deref(),
-                                );
-                                active_workspace_path_clone.replace(Some(workspace_path));
-                                active_thread_id_clone.replace(remote_thread_id);
-                                if let Some(content) = sidebar_clone.content() {
-                                    widget_tree::select_thread_row(&content, last_thread_id);
-                                }
-                            });
-                            restored = true;
-                            break;
-                        }
+                        gtk::glib::idle_add_local_once(move || {
+                            let _ = db_for_restore.set_runtime_profile_id(thread_profile_id);
+                            let _ = db_for_restore.set_active_profile_id(thread_profile_id);
+                            let _ = db_for_restore.set_current_profile_account_identity(
+                                thread_account_type.as_deref(),
+                                thread_account_email.as_deref(),
+                            );
+                            active_workspace_path_clone.replace(Some(workspace_path));
+                            active_thread_id_clone.replace(remote_thread_id);
+                            if let Some(content) = sidebar_clone.content() {
+                                widget_tree::select_thread_row(&content, last_thread_id);
+                            }
+                        });
+                        restored = true;
+                        break;
                     }
                 }
-                if !restored {
-                    let _ = db.set_setting("last_active_thread_id", "");
-                    active_thread_id.replace(None);
-                }
+            }
+            if !restored {
+                let _ = db.set_setting("last_active_thread_id", "");
+                active_thread_id.replace(None);
             }
         }
     }

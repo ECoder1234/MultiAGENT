@@ -1,18 +1,15 @@
 .welcome-overlay {
   background: alpha(#757b86, 0.14);
-  backdrop-filter: blur(3px);
   opacity: 1;
-  transition: background 1500ms ease, backdrop-filter 1500ms ease, opacity 1500ms ease;
+  transition: background 1500ms ease, opacity 1500ms ease;
 }
 
 .welcome-overlay.guide-mode {
   background: alpha(#757b86, 0.08);
-  backdrop-filter: blur(0px);
 }
 
 .welcome-overlay.is-dismissing {
   background: alpha(#757b86, 0.0);
-  backdrop-filter: blur(0px);
   opacity: 0;
 }
 
@@ -218,7 +215,6 @@
 .top-tab,
 .topbar-actions-button,
 .topbar-skills-mcp-button,
-.multiview-toggle-button,
 .bottom-remote-button,
 .bottom-settings-button,
 .bottom-style-button {
@@ -231,7 +227,6 @@
 .top-tab image,
 .topbar-actions-button image,
 .topbar-skills-mcp-button image,
-.multiview-toggle-button image,
 .bottom-remote-button image,
 .bottom-settings-button image,
 .bottom-style-button image {

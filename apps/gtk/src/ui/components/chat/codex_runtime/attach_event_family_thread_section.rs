@@ -71,6 +71,59 @@
                         &format!("_Thread status changed: `{status}`._"),
                     );
                 }
+                "thread/goal/updated" => {
+                    let resolved_thread_id =
+                        thread_id.or_else(|| active_turn_thread.borrow().clone());
+                    if !super::codex_events::should_render_for_active(
+                        resolved_thread_id.as_deref(),
+                        active_thread_id.as_deref(),
+                    ) {
+                        continue;
+                    }
+                    let Some(note) = format_goal_update_note(&event.params) else {
+                        continue;
+                    };
+                    let turn_id = super::codex_events::extract_turn_id(&event.params)
+                        .or_else(|| active_turn.borrow().clone())
+                        .or_else(|| turn_uis.borrow().keys().last().cloned())
+                        .unwrap_or_else(|| "thread-goal".to_string());
+                    let mut turns = turn_uis.borrow_mut();
+                    let turn_ui = turns.entry(turn_id).or_insert_with(|| {
+                        super::create_turn_ui(&messages_box, &messages_scroll, &conversation_stack)
+                    });
+                    let mut seq = event_note_counter.borrow_mut();
+                    *seq += 1;
+                    let key = format!("event:thread-goal:{}", *seq);
+                    append_event_note_to_turn(turn_ui, &messages_scroll, key, &note);
+                }
+                "thread/goal/cleared" => {
+                    let resolved_thread_id =
+                        thread_id.or_else(|| active_turn_thread.borrow().clone());
+                    if !super::codex_events::should_render_for_active(
+                        resolved_thread_id.as_deref(),
+                        active_thread_id.as_deref(),
+                    ) {
+                        continue;
+                    }
+                    let turn_id = active_turn
+                        .borrow()
+                        .clone()
+                        .or_else(|| turn_uis.borrow().keys().last().cloned())
+                        .unwrap_or_else(|| "thread-goal".to_string());
+                    let mut turns = turn_uis.borrow_mut();
+                    let turn_ui = turns.entry(turn_id).or_insert_with(|| {
+                        super::create_turn_ui(&messages_box, &messages_scroll, &conversation_stack)
+                    });
+                    let mut seq = event_note_counter.borrow_mut();
+                    *seq += 1;
+                    let key = format!("event:thread-goal-cleared:{}", *seq);
+                    append_event_note_to_turn(
+                        turn_ui,
+                        &messages_scroll,
+                        key,
+                        "_Goal cleared for this thread._",
+                    );
+                }
                 "thread/archived" | "thread/unarchived" | "thread/closed" => {
                     let resolved_thread_id =
                         thread_id.or_else(|| active_turn_thread.borrow().clone());

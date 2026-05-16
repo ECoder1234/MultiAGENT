@@ -59,7 +59,6 @@ const BACKDROP_FALLBACK_CSS: &str = r#"
     .no-backdrop-blur .scroll-down-button,
     .no-backdrop-blur .remote-mode-overlay,
     .no-backdrop-blur .welcome-overlay {
-      backdrop-filter: none;
     }
 
     .no-backdrop-blur .composer-floating {
@@ -112,6 +111,26 @@ const BACKDROP_FALLBACK_CSS: &str = r#"
 
     .no-backdrop-blur .welcome-overlay.is-dismissing {
       background: alpha(#757b86, 0.0);
+    }
+"#;
+
+const BACKDROP_BLUR_CSS: &str = r#"
+    .composer-floating,
+    .chat-worktree-overlay,
+    .chat-queued-card,
+    .file-preview-card,
+    .sidebar-action-button,
+    .scroll-down-button,
+    .remote-mode-overlay,
+    .welcome-overlay,
+    .sidebar-host,
+    .chat-frame,
+    .browser-split-panel,
+    .git-tab-outgoing-card,
+    .settings-root,
+    .restore-preview-dialog,
+    .command-palette {
+      backdrop-filter: blur(18px);
     }
 "#;
 
@@ -187,14 +206,15 @@ const USER_OVERRIDE_CSS: &str = r#"
 
 const COMPONENT_STYLES: &[&str] = &[
     include_str!("styles/components/actions_popover.css"),
+    include_str!("styles/components/actions_tab.css"),
     include_str!("styles/components/buttons.css"),
+    include_str!("styles/components/browser_tab.css"),
     include_str!("styles/components/chat.css"),
     include_str!("styles/components/chat_messages.css"),
     include_str!("styles/components/composer.css"),
     include_str!("styles/components/bottom_bar.css"),
     include_str!("styles/components/file_browser.css"),
     include_str!("styles/components/git_tab.css"),
-    include_str!("styles/components/multi_chat.css"),
     include_str!("styles/components/profile_selector.css"),
     include_str!("styles/components/remote.css"),
     include_str!("styles/components/restore_preview.css"),
@@ -205,12 +225,20 @@ const COMPONENT_STYLES: &[&str] = &[
     include_str!("styles/components/top_bar.css"),
     include_str!("styles/components/thread_list.css"),
     include_str!("styles/components/welcome.css"),
+    include_str!("styles/components/multiagent.css"),
 ];
 
 fn register_css(display: &gdk::Display, css: &str, priority: u32) {
     let provider = gtk::CssProvider::new();
     provider.load_from_string(css);
     gtk::style_context_add_provider_for_display(display, &provider, priority);
+}
+
+fn gtk_supports_backdrop_filter() -> bool {
+    // Current Ubuntu/Debian GTK builds reject this CSS property at parse time.
+    // Keep the glass effect on alpha, borders, and shadows unless GTK exposes
+    // stable parser support without warnings.
+    false
 }
 
 pub fn install_css() {
@@ -233,6 +261,13 @@ pub fn install_css() {
             BACKDROP_FALLBACK_CSS,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+        if gtk_supports_backdrop_filter() {
+            register_css(
+                &display,
+                BACKDROP_BLUR_CSS,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+        }
         register_css(
             &display,
             USER_OVERRIDE_CSS,

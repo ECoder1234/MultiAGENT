@@ -72,6 +72,11 @@ pub fn build_bottom_bar(db: Rc<AppDb>, manager: Rc<CodexProfileManager>) -> gtk:
         });
     }
 
+    let session_meter = gtk::Label::new(Some("tokens 0 · est. $0.00"));
+    session_meter.add_css_class("bottom-session-meter");
+    session_meter.set_tooltip_text(Some("Current session token usage and estimated cost"));
+    bottom_bar.set_center_widget(Some(&session_meter));
+
     let right_box = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     right_box.set_valign(gtk::Align::Center);
 

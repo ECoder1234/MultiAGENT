@@ -738,7 +738,7 @@ fn ensure_style_picker_preview_provider() {
 
 fn base_preset_colors() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
-        ("default", "Default", "#181616"),
+        ("default", "Glassy Dark", "#0d0d0f"),
         ("blue", "Blue", "#1e3a5f"),
         ("purple", "Purple", "#3a2a4f"),
         ("green", "Green", "#2a3f2a"),
@@ -758,7 +758,7 @@ fn accent_preset_colors() -> Vec<(&'static str, &'static str, String)> {
 }
 
 fn default_manual_accent_color() -> String {
-    "#519a95".to_string()
+    "#5b6af0".to_string()
 }
 
 fn legacy_accent_preset_value(raw: &str) -> Option<String> {
@@ -1129,7 +1129,7 @@ fn resolved_theme_hex(raw: &str) -> String {
         "green" => "#2a3f2a".to_string(),
         "red" => "#4f2a2a".to_string(),
         "orange" => "#4f3a2a".to_string(),
-        _ => "#181616".to_string(),
+        _ => "#0d0d0f".to_string(),
     }
 }
 
@@ -1206,6 +1206,28 @@ fn accent_from_manual_color(accent_raw: &str) -> (String, String) {
     let accent_bg_hex = resolved_theme_hex(accent_raw);
     let accent_hex = lighten_hex_color(&accent_bg_hex, 0.18);
     (accent_bg_hex, accent_hex)
+}
+
+fn theme_luminance(hex: &str) -> f64 {
+    hex_to_rgb_unit(hex)
+        .map(|(r, g, b)| (0.2126 * r) + (0.7152 * g) + (0.0722 * b))
+        .unwrap_or(0.0)
+}
+
+fn view_color_for_base(base_hex: &str) -> String {
+    if theme_luminance(base_hex) > 0.58 {
+        "#ffffff".to_string()
+    } else {
+        lighten_hex_color(base_hex, 0.08)
+    }
+}
+
+fn text_color_for_base(base_hex: &str) -> &'static str {
+    if theme_luminance(base_hex) > 0.58 {
+        "#111217"
+    } else {
+        "#ffffff"
+    }
 }
 
 fn sync_picker_controls_from_hex(
@@ -1285,16 +1307,18 @@ fn apply_theme(config: &ThemeConfig) {
             config.color.as_str()
         } else {
             match config.color.as_str() {
-                "system" => "#181616",
+                "system" => "#0d0d0f",
                 "blue" => "#1e3a5f",
                 "purple" => "#3a2a4f",
                 "green" => "#2a3f2a",
                 "red" => "#4f2a2a",
                 "orange" => "#4f3a2a",
-                _ => "#181616",
+                _ => "#0d0d0f",
             }
         };
         let popup_color = lighten_hex_color(base_color, 0.10);
+        let view_color = view_color_for_base(base_color);
+        let text_color = text_color_for_base(base_color);
         let (accent_bg_color, accent_color) = if config.accent_auto {
             complementary_accent_for(base_color)
         } else {
@@ -1384,13 +1408,17 @@ fn apply_theme(config: &ThemeConfig) {
         css.push_str(
             format!(
                 r#"
-                @define-color enzim_window_bg {};
-                @define-color enzim_popup_bg {};
-                @define-color enzim_accent_bg {};
-                @define-color enzim_accent {};
-                @define-color window_bg_color @enzim_window_bg;
-                @define-color accent_bg_color @enzim_accent_bg;
-                @define-color accent_color @enzim_accent;
+                @define-color multiagent_window_bg {};
+                @define-color multiagent_view_bg {};
+                @define-color multiagent_window_fg {};
+                @define-color multiagent_popup_bg {};
+                @define-color multiagent_accent_bg {};
+                @define-color multiagent_accent {};
+                @define-color window_bg_color @multiagent_window_bg;
+                @define-color view_bg_color @multiagent_view_bg;
+                @define-color window_fg_color @multiagent_window_fg;
+                @define-color accent_bg_color @multiagent_accent_bg;
+                @define-color accent_color @multiagent_accent;
                 @define-color accent_fg_color #ffffff;
 
                 window,
@@ -1421,7 +1449,7 @@ fn apply_theme(config: &ThemeConfig) {
                 popover.composer-worktree-popover.background > contents,
                 popover.compact-selector-popover > contents,
                 popover.compact-selector-popover.background > contents {{
-                    background-color: alpha(@enzim_popup_bg, 0.98);
+                    background-color: alpha(@multiagent_popup_bg, 0.98);
                     background-image: none;
                 }}
 
@@ -1437,7 +1465,7 @@ fn apply_theme(config: &ThemeConfig) {
                 popover.actions-popover.background > arrow,
                 popover.style-picker-popover > arrow,
                 popover.style-picker-popover.background > arrow {{
-                    background-color: alpha(@enzim_popup_bg, 0.98);
+                    background-color: alpha(@multiagent_popup_bg, 0.98);
                     background-image: none;
                     border: 1px solid alpha(@window_fg_color, 0.14);
                     box-shadow: none;
@@ -1451,7 +1479,7 @@ fn apply_theme(config: &ThemeConfig) {
                 popover.composer-attach-popover.background > arrow,
                 popover.composer-attach-picker-popover > arrow,
                 popover.composer-attach-picker-popover.background > arrow {{
-                    background-color: alpha(@enzim_popup_bg, 0.98);
+                    background-color: alpha(@multiagent_popup_bg, 0.98);
                     background-image: none;
                     border: 1px solid alpha(@window_fg_color, 0.14);
                     box-shadow: none;
@@ -1481,6 +1509,8 @@ fn apply_theme(config: &ThemeConfig) {
                 }}
             "#,
                 base_color,
+                view_color,
+                text_color,
                 popup_color,
                 accent_bg_color,
                 accent_color,
@@ -1504,7 +1534,41 @@ fn apply_theme(config: &ThemeConfig) {
 }
 
 pub fn initialize_theme(db: &AppDb) {
+    adw::StyleManager::default().set_color_scheme(if dark_theme_enabled(db) {
+        adw::ColorScheme::ForceDark
+    } else {
+        adw::ColorScheme::ForceLight
+    });
     let config = load_theme_config(db);
+    apply_theme(&config);
+}
+
+pub fn dark_theme_enabled(db: &AppDb) -> bool {
+    db.get_setting("interface_theme")
+        .ok()
+        .flatten()
+        .map(|value| !value.trim().eq_ignore_ascii_case("light"))
+        .unwrap_or(true)
+}
+
+pub fn set_dark_theme_enabled(db: &AppDb, enabled: bool) {
+    let _ = db.set_setting("interface_theme", if enabled { "dark" } else { "light" });
+    let mut config = load_theme_config(db);
+    config.color = if enabled {
+        "#0d0d0f".to_string()
+    } else {
+        "#f5f7ff".to_string()
+    };
+    config.accent_auto = false;
+    config.accent_color = default_manual_accent_color();
+    let _ = db.set_setting("theme_color", &config.color);
+    let _ = db.set_setting("theme_accent_auto", "0");
+    let _ = db.set_setting("theme_accent_color", &config.accent_color);
+    adw::StyleManager::default().set_color_scheme(if enabled {
+        adw::ColorScheme::ForceDark
+    } else {
+        adw::ColorScheme::ForceLight
+    });
     apply_theme(&config);
 }
 

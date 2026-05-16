@@ -1,8 +1,10 @@
 [package]
-name = "enzim_core"
+name = "multiagent_core"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.92"
+license.workspace = true
+homepage.workspace = true
 
 [dependencies]
 libc = "0.2"

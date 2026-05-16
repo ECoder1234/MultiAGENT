@@ -1,0 +1,8 @@
+{
+  "dev.multiagent.multiagent": {
+    "stable": {
+      "finish-args-home-filesystem-access": "MultiAGENT is a local coding workspace and needs read/write access to user-selected project checkouts, worktrees, and generated diffs without copying source trees into private app storage.",
+      "finish-args-flatpak-spawn-access": "MultiAGENT bridges to user-installed host coding-agent CLIs such as Codex, OpenCode, Git, and shell commands so credentials and toolchains remain in the user's normal Linux environment instead of being bundled into the Flatpak."
+    }
+  }
+}

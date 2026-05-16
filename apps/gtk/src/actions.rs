@@ -11,14 +11,14 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-const HOST_PID_MARKER: &str = "__ENZIM_ACTION_HOST_PID__:";
+const HOST_PID_MARKER: &str = "__MULTIAGENT_ACTION_HOST_PID__:";
 const HOST_ACTION_WRAPPER: &str = r#"if command -v setsid >/dev/null 2>&1; then
   setsid /usr/bin/env bash -lc "$1" &
 else
   /usr/bin/env bash -lc "$1" &
 fi
 child=$!
-printf '__ENZIM_ACTION_HOST_PID__:%s\n' "$child"
+printf '__MULTIAGENT_ACTION_HOST_PID__:%s\n' "$child"
 wait "$child"
 "#;
 

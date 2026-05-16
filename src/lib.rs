@@ -6,4 +6,5 @@ pub mod restore;
 pub mod services;
 pub mod skill_mcp;
 pub mod worktree;
-pub use enzim_core::git_exec;
+pub use multiagent_core::chrome_bridge;
+pub use multiagent_core::git_exec;

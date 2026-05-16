@@ -1,6 +1,6 @@
-use crate::services::app::runtime::RuntimeClient;
 use crate::services::app::CodexProfileManager;
 use crate::services::app::chat::AppDb;
+use crate::services::app::runtime::RuntimeClient;
 use crate::ui::widget_tree;
 use adw::prelude::*;
 use serde_json::Value;
@@ -993,14 +993,19 @@ fn build_chat_tab_single(
     content_box.set_margin_top(0);
     content_box.set_margin_bottom(0);
     content_box.set_vexpand(true);
+    content_box.set_hexpand(true);
+    content_box.set_halign(gtk::Align::Fill);
 
     let chat_frame = gtk::Box::new(gtk::Orientation::Vertical, 0);
     chat_frame.add_css_class("chat-frame");
     chat_frame.set_vexpand(true);
+    chat_frame.set_hexpand(true);
+    chat_frame.set_halign(gtk::Align::Fill);
 
     let conversation_stack = gtk::Stack::new();
     conversation_stack.set_widget_name("chat-conversation-stack");
     conversation_stack.set_vexpand(true);
+    conversation_stack.set_hexpand(true);
     conversation_stack.set_transition_type(gtk::StackTransitionType::Crossfade);
     conversation_stack.set_transition_duration(160);
 
@@ -1064,6 +1069,8 @@ fn build_chat_tab_single(
 
     let messages_box = gtk::Box::new(gtk::Orientation::Vertical, 8);
     messages_box.set_widget_name("chat-messages-box");
+    messages_box.set_hexpand(true);
+    messages_box.set_halign(gtk::Align::Fill);
     messages_box.set_margin_start(12);
     messages_box.set_margin_end(12);
     messages_box.set_margin_top(0);
@@ -1074,6 +1081,7 @@ fn build_chat_tab_single(
         .hscrollbar_policy(gtk::PolicyType::Never)
         .vscrollbar_policy(gtk::PolicyType::External)
         .vexpand(true)
+        .hexpand(true)
         .child(&messages_box)
         .build();
     messages_scroll.set_has_frame(false);
@@ -1102,6 +1110,8 @@ fn build_chat_tab_single(
 
     let conversation_overlay = gtk::Overlay::new();
     conversation_overlay.set_vexpand(true);
+    conversation_overlay.set_hexpand(true);
+    conversation_overlay.set_halign(gtk::Align::Fill);
     conversation_overlay.set_child(Some(&conversation_stack));
 
     let bottom_fade = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -1403,7 +1413,8 @@ fn build_chat_tab_single(
     let live_turn_timer_label = composer_section.live_turn_timer_label;
     live_turn_status_revealer.set_widget_name("chat-live-status-revealer");
     suggestion_row.set_widget_name("chat-suggestion-row");
-    lower_content.set_halign(gtk::Align::Center);
+    lower_content.set_halign(gtk::Align::Fill);
+    lower_content.set_hexpand(true);
     lower_content.set_valign(gtk::Align::End);
     lower_content.set_margin_start(12);
     lower_content.set_margin_end(12);
@@ -1413,14 +1424,16 @@ fn build_chat_tab_single(
     clamp.set_maximum_size(1200);
     clamp.set_tightening_threshold(1200);
     clamp.set_child(Some(&lower_content));
-    clamp.set_halign(gtk::Align::Center);
+    clamp.set_halign(gtk::Align::Fill);
+    clamp.set_hexpand(true);
     clamp.set_valign(gtk::Align::End);
     let composer_revealer = gtk::Revealer::new();
     composer_revealer.set_transition_type(gtk::RevealerTransitionType::Crossfade);
     composer_revealer.set_transition_duration(220);
     composer_revealer.set_reveal_child(true);
     composer_revealer.set_visible(true);
-    composer_revealer.set_halign(gtk::Align::Center);
+    composer_revealer.set_halign(gtk::Align::Fill);
+    composer_revealer.set_hexpand(true);
     composer_revealer.set_valign(gtk::Align::End);
     composer_revealer.set_child(Some(&clamp));
     conversation_overlay.add_overlay(&composer_revealer);
@@ -1439,6 +1452,7 @@ fn build_chat_tab_single(
         messages_box: messages_box.clone(),
         conversation_stack: conversation_stack.clone(),
     });
+    chat_frame.append(&build_agent_output_tabs());
     chat_frame.append(&conversation_overlay);
 
     let turn_uis: Rc<RefCell<HashMap<String, TurnUi>>> = Rc::new(RefCell::new(HashMap::new()));
@@ -1581,6 +1595,60 @@ fn build_chat_tab_single(
     content_box
 }
 
+fn build_agent_output_tabs() -> gtk::Box {
+    let strip = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    strip.add_css_class("agent-output-tabs");
+    strip.set_hexpand(true);
+    strip.set_halign(gtk::Align::Fill);
+
+    let tabs = [
+        ("Primary", "running", "Main agent stream"),
+        ("Review", "idle", "Diff and file output"),
+        ("Background", "waiting", "Queued agents"),
+    ];
+    let buttons: Rc<RefCell<Vec<gtk::Button>>> = Rc::new(RefCell::new(Vec::new()));
+    for (idx, (label, status, tooltip)) in tabs.into_iter().enumerate() {
+        let button = gtk::Button::new();
+        button.set_has_frame(false);
+        button.add_css_class("agent-output-tab");
+        if idx == 0 {
+            button.add_css_class("agent-output-tab-active");
+        }
+        button.set_tooltip_text(Some(tooltip));
+
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        let dot = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        dot.add_css_class("agent-status-dot");
+        dot.add_css_class(&format!("agent-status-{status}"));
+        row.append(&dot);
+        let text = gtk::Label::new(Some(label));
+        text.add_css_class("agent-output-tab-label");
+        row.append(&text);
+        button.set_child(Some(&row));
+
+        let buttons_for_click = buttons.clone();
+        button.connect_clicked(move |clicked| {
+            for button in buttons_for_click.borrow().iter() {
+                button.remove_css_class("agent-output-tab-active");
+            }
+            clicked.add_css_class("agent-output-tab-active");
+        });
+        buttons.borrow_mut().push(button.clone());
+        strip.append(&button);
+    }
+
+    let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    spacer.set_hexpand(true);
+    strip.append(&spacer);
+
+    let token_counter = gtk::Label::new(Some("tokens 0 · est. $0.00"));
+    token_counter.add_css_class("agent-output-token-counter");
+    token_counter.set_tooltip_text(Some("Session token and estimated cost counter"));
+    strip.append(&token_counter);
+
+    strip
+}
+
 fn build_thread_stack_state(label_text: &str, _show_spinner: bool) -> (gtk::Box, gtk::Label) {
     let content_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
     content_box.set_margin_start(0);
@@ -1588,10 +1656,14 @@ fn build_thread_stack_state(label_text: &str, _show_spinner: bool) -> (gtk::Box,
     content_box.set_margin_top(0);
     content_box.set_margin_bottom(0);
     content_box.set_vexpand(true);
+    content_box.set_hexpand(true);
+    content_box.set_halign(gtk::Align::Fill);
 
     let chat_frame = gtk::Box::new(gtk::Orientation::Vertical, 0);
     chat_frame.add_css_class("chat-frame");
     chat_frame.set_vexpand(true);
+    chat_frame.set_hexpand(true);
+    chat_frame.set_halign(gtk::Align::Fill);
 
     let center = gtk::Box::new(gtk::Orientation::Vertical, 8);
     center.set_vexpand(true);
@@ -1607,6 +1679,27 @@ fn build_thread_stack_state(label_text: &str, _show_spinner: bool) -> (gtk::Box,
     (content_box, heading)
 }
 
+fn unload_cached_thread_panes(
+    pane_stack: &gtk::Stack,
+    panes_by_thread: &Rc<RefCell<HashMap<String, gtk::Box>>>,
+    keep_thread_id: Option<&str>,
+) {
+    let to_remove = {
+        let panes = panes_by_thread.borrow();
+        panes
+            .keys()
+            .filter(|thread_id| keep_thread_id != Some(thread_id.as_str()))
+            .cloned()
+            .collect::<Vec<_>>()
+    };
+
+    for thread_id in to_remove {
+        if let Some(pane) = panes_by_thread.borrow_mut().remove(&thread_id) {
+            pane_stack.remove(&pane);
+        }
+    }
+}
+
 pub fn build_chat_tab(
     db: Rc<AppDb>,
     manager: Rc<CodexProfileManager>,
@@ -1616,6 +1709,7 @@ pub fn build_chat_tab(
 ) -> gtk::Box {
     let host = gtk::Box::new(gtk::Orientation::Vertical, 0);
     host.set_vexpand(true);
+    host.set_hexpand(true);
 
     let pane_stack = gtk::Stack::new();
     pane_stack.set_vexpand(true);
@@ -1778,6 +1872,7 @@ pub fn build_chat_tab(
             };
             let desired_view = active_thread.clone().or(pending_view_key.clone());
             if *visible_thread_id.borrow() == desired_view {
+                unload_cached_thread_panes(&pane_stack, &panes_by_thread, desired_view.as_deref());
                 return gtk::glib::ControlFlow::Continue;
             }
 
@@ -1789,11 +1884,13 @@ pub fn build_chat_tab(
                     }
                     startup_loading_deadline_micros.replace(None);
                 }
+                unload_cached_thread_panes(&pane_stack, &panes_by_thread, None);
                 pane_stack.set_visible_child_name("empty");
                 visible_thread_id.replace(None);
                 return gtk::glib::ControlFlow::Continue;
             };
             startup_loading_deadline_micros.replace(None);
+            unload_cached_thread_panes(&pane_stack, &panes_by_thread, Some(&thread_id));
 
             if let Some(local_id_str) = thread_id.strip_prefix("pending-local:") {
                 let local_id = local_id_str.parse::<i64>().ok();
@@ -1841,6 +1938,11 @@ pub fn build_chat_tab(
                     if panes_by_thread.borrow().contains_key(&thread_id_for_build) {
                         return;
                     }
+                    unload_cached_thread_panes(
+                        &pane_stack,
+                        &panes_by_thread,
+                        Some(&thread_id_for_build),
+                    );
 
                     let child_name = format!("thread:{thread_id_for_build}");
                     let pane_active_thread_id =

@@ -97,6 +97,7 @@ impl AppDb {
 
             CREATE TABLE IF NOT EXISTS remote_telegram_accounts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                provider TEXT NOT NULL DEFAULT 'discord',
                 bot_token TEXT NOT NULL,
                 telegram_user_id TEXT NOT NULL,
                 telegram_chat_id TEXT NOT NULL,
@@ -120,7 +121,7 @@ impl AppDb {
             CREATE TABLE IF NOT EXISTS remote_pending_prompts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 local_thread_id INTEGER NOT NULL,
-                source TEXT NOT NULL DEFAULT 'telegram',
+                source TEXT NOT NULL DEFAULT 'discord',
                 telegram_chat_id TEXT,
                 telegram_message_id TEXT,
                 telegram_user_id TEXT,
@@ -142,6 +143,7 @@ impl AppDb {
         self.ensure_profiles_backend_kind_column()?;
         self.ensure_profiles_icon_column()?;
         self.ensure_chat_turns_raw_items_column()?;
+        self.ensure_remote_accounts_provider_column()?;
         Ok(())
     }
 
@@ -447,6 +449,25 @@ impl AppDb {
                 [],
             )?;
         }
+        Ok(())
+    }
+
+    fn ensure_remote_accounts_provider_column(&self) -> rusqlite::Result<()> {
+        let conn = self.conn.borrow();
+        let mut stmt = conn.prepare("PRAGMA table_info(remote_telegram_accounts)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for row in rows {
+            if row? == "provider" {
+                return Ok(());
+            }
+        }
+        drop(stmt);
+        drop(conn);
+        self.conn.borrow_mut().execute(
+            "ALTER TABLE remote_telegram_accounts
+             ADD COLUMN provider TEXT NOT NULL DEFAULT 'discord'",
+            [],
+        )?;
         Ok(())
     }
 

@@ -1,17 +1,20 @@
 [package]
-name = "enzimcoder-gtk"
+name = "multiagent-gtk"
 version.workspace = true
+description = "GTK interface for MultiAGENT."
 edition = "2024"
 rust-version = "1.92"
+license.workspace = true
+homepage.workspace = true
 
 [[bin]]
-name = "enzimcoder"
+name = "multiagent"
 path = "src/main.rs"
 
 [dependencies]
-enzimcoder = { path = "../.." }
-gtk = { package = "gtk4", version = "0.11", features = ["v4_22"] }
-adw = { package = "libadwaita", version = "0.9", features = ["v1_8", "gtk_v4_22"] }
+multiagent = { path = "../.." }
+gtk = { package = "gtk4", version = "0.11", features = ["v4_14"] }
+adw = { package = "libadwaita", version = "0.9", features = ["v1_5"] }
 diffy = "0.4"
 libc = "0.2"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }

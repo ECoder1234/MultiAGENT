@@ -238,6 +238,54 @@ label#opencode-provider-picker-row-label {
   color: alpha(@window_fg_color, 0.78);
 }
 
+.feature-row {
+  padding: 10px;
+  border-radius: 10px;
+  background: alpha(@window_fg_color, 0.035);
+}
+
+.feature-row-icon {
+  color: alpha(@window_fg_color, 0.78);
+  margin-top: 2px;
+}
+
+.feature-row-title {
+  font-weight: 700;
+  color: alpha(@window_fg_color, 0.94);
+}
+
+.feature-row-body {
+  font-size: 0.84rem;
+  color: alpha(@window_fg_color, 0.78);
+}
+
+.feature-row-location {
+  font-size: 0.78rem;
+  color: alpha(@window_fg_color, 0.56);
+}
+
+.feature-status {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.feature-status-ready {
+  color: #8ff0a4;
+  background: alpha(#26a269, 0.2);
+}
+
+.feature-status-partial {
+  color: #f8e45c;
+  background: alpha(#c88800, 0.22);
+}
+
+.feature-status-upstream {
+  color: #c0bfbc;
+  background: alpha(@window_fg_color, 0.12);
+}
+
 button.about-link-button {
   min-height: 54px;
   padding: 10px 12px;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/com/enzim/coder/icons/scalable/actions">
+  <gresource prefix="/com/multiagent/icons/scalable/actions">
     <file alias="plus-framed-symbolic.svg">icons/plus-framed.svg</file>
     <file alias="pan-down-symbolic.svg">icons/pan-down-symbolic.svg</file>
     <file alias="pan-end-symbolic.svg">icons/pan-end-symbolic.svg</file>
@@ -61,7 +61,7 @@
     <file alias="provider-claude.svg">icons/provider_claude.svg</file>
     <file alias="provider-gemini.svg">icons/provider_gemini.svg</file>
   </gresource>
-  <gresource prefix="/com/enzim/coder/icons/hicolor/scalable/apps">
-    <file alias="dev.enzim.EnzimCoder.svg">icons/dev.enzim.EnzimCoder.svg</file>
+  <gresource prefix="/com/multiagent/icons/hicolor/scalable/apps">
+    <file alias="dev.multiagent.multiagent.svg">icons/dev.multiagent.multiagent.svg</file>
   </gresource>
 </gresources>

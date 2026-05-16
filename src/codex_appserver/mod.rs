@@ -8,13 +8,11 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::Duration;
 
-pub use enzim_core::appserver_types::{
+pub use multiagent_core::appserver_types::{
     AccountInfo, AppServerNotification, McpServerInfo, ModelInfo, SkillInfo,
 };
-pub use enzim_core::codex_support::cli_available;
-use enzim_core::codex_support::{
-    build_codex_command, format_rpc_error, running_in_flatpak,
-};
+pub use multiagent_core::codex_support::cli_available;
+use multiagent_core::codex_support::{build_codex_command, format_rpc_error, running_in_flatpak};
 
 type PendingMap = Arc<Mutex<HashMap<i64, mpsc::Sender<Result<Value, String>>>>>;
 
@@ -699,8 +697,8 @@ impl CodexAppServer {
             "initialize",
             json!({
                 "clientInfo": {
-                    "name": "enzimcoder_gtk",
-                    "title": "Enzim Coder",
+                    "name": "codex_editor_gtk",
+                    "title": "MultiAGENT",
                     "version": env!("CARGO_PKG_VERSION")
                 },
                 "capabilities": {

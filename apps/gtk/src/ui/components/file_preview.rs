@@ -13,7 +13,7 @@ use std::rc::Rc;
 use std::sync::OnceLock;
 use std::time::SystemTime;
 
-const PREVIEW_STYLE_SCHEME_ID: &str = "enzimcoder-preview-dark";
+const PREVIEW_STYLE_SCHEME_ID: &str = "multiagent-preview-dark";
 
 struct FilePreviewWindow {
     window: gtk::Window,
@@ -1392,7 +1392,7 @@ fn register_preview_style_scheme(scheme_manager: &StyleSchemeManager) {
     .copied();
 
     let preview_scheme_dir = PREVIEW_SCHEME_DIR.get_or_init(|| {
-        let dir = std::env::temp_dir().join("enzimcoder").join("gtksourceview5");
+        let dir = std::env::temp_dir().join("multiagent").join("gtksourceview5");
         if fs::create_dir_all(&dir).is_err() {
             return None;
         }
@@ -1402,7 +1402,7 @@ fn register_preview_style_scheme(scheme_manager: &StyleSchemeManager) {
             .unwrap_or_default();
 
         let scheme_xml = format!(
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<style-scheme id=\"{id}\" name=\"Enzimcoder Preview Dark\" version=\"1.0\"{parent}>\n  <author>Enzimcoder</author>\n  <description>Deterministic dark background for quick preview.</description>\n  <color name=\"bg\" value=\"#17181c\"/>\n  <color name=\"fg\" value=\"#e6e6e6\"/>\n  <color name=\"line_bg\" value=\"#13141a\"/>\n  <color name=\"line_fg\" value=\"#7f8798\"/>\n  <color name=\"line_border\" value=\"#222633\"/>\n  <color name=\"line_current_fg\" value=\"#b9c1d1\"/>\n  <color name=\"selection\" value=\"#2d3342\"/>\n  <color name=\"selection_unfocused\" value=\"#2a2f3c\"/>\n  <color name=\"cursor\" value=\"#e6e6e6\"/>\n  <color name=\"current_line\" value=\"#1e212b\"/>\n  <style name=\"text\" foreground=\"fg\" background=\"bg\"/>\n  <style name=\"line-numbers\" foreground=\"line_fg\" background=\"line_bg\"/>\n  <style name=\"line-numbers-border\" background=\"line_border\"/>\n  <style name=\"current-line\" background=\"current_line\"/>\n  <style name=\"current-line-number\" foreground=\"line_current_fg\" background=\"line_bg\" bold=\"true\"/>\n  <style name=\"selection\" foreground=\"fg\" background=\"selection\"/>\n  <style name=\"selection-unfocused\" foreground=\"fg\" background=\"selection_unfocused\"/>\n  <style name=\"cursor\" foreground=\"cursor\"/>\n</style-scheme>\n",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<style-scheme id=\"{id}\" name=\"MultiAGENT Preview Dark\" version=\"1.0\"{parent}>\n  <author>MultiAGENT</author>\n  <description>Deterministic dark background for quick preview.</description>\n  <color name=\"bg\" value=\"#111217\"/>\n  <color name=\"fg\" value=\"#e6e8f2\"/>\n  <color name=\"line_bg\" value=\"#0d0d0f\"/>\n  <color name=\"line_fg\" value=\"#7f8798\"/>\n  <color name=\"line_border\" value=\"#222633\"/>\n  <color name=\"line_current_fg\" value=\"#b9c1d1\"/>\n  <color name=\"selection\" value=\"#2d3342\"/>\n  <color name=\"selection_unfocused\" value=\"#2a2f3c\"/>\n  <color name=\"cursor\" value=\"#e6e8f2\"/>\n  <color name=\"current_line\" value=\"#191b25\"/>\n  <color name=\"diff_add_bg\" value=\"#12311f\"/>\n  <color name=\"diff_add_fg\" value=\"#9ee6b4\"/>\n  <color name=\"diff_remove_bg\" value=\"#35171e\"/>\n  <color name=\"diff_remove_fg\" value=\"#ff9aa6\"/>\n  <color name=\"diff_hunk_fg\" value=\"#9aa4ff\"/>\n  <style name=\"text\" foreground=\"fg\" background=\"bg\"/>\n  <style name=\"line-numbers\" foreground=\"line_fg\" background=\"line_bg\"/>\n  <style name=\"line-numbers-border\" background=\"line_border\"/>\n  <style name=\"current-line\" background=\"current_line\"/>\n  <style name=\"current-line-number\" foreground=\"line_current_fg\" background=\"line_bg\" bold=\"true\"/>\n  <style name=\"selection\" foreground=\"fg\" background=\"selection\"/>\n  <style name=\"selection-unfocused\" foreground=\"fg\" background=\"selection_unfocused\"/>\n  <style name=\"cursor\" foreground=\"cursor\"/>\n  <style name=\"diff:added-line\" foreground=\"diff_add_fg\" background=\"diff_add_bg\"/>\n  <style name=\"diff:removed-line\" foreground=\"diff_remove_fg\" background=\"diff_remove_bg\"/>\n  <style name=\"diff:changed-line\" foreground=\"diff_hunk_fg\"/>\n  <style name=\"diff:location\" foreground=\"diff_hunk_fg\" bold=\"true\"/>\n</style-scheme>\n",
             id = PREVIEW_STYLE_SCHEME_ID,
             parent = parent_attr
         );
