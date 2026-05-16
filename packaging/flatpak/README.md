@@ -12,8 +12,8 @@ flatpak-builder --user --install-deps-from=flathub --force-clean build-dir packa
 
 Use `--user` for local testing so the build installs SDKs, runtimes, and test
 apps into the user Flatpak installation rather than the system installation.
-The checked-in manifest uses the public `multiagent-v0.1.3` GitHub source tag
-so the same file can be used for Flathub review.
+The checked-in manifest uses the public `multiagent-v0.1.3-flathub1` GitHub
+source tag so the same file can be used for Flathub review.
 
 ## Flathub Lint
 
