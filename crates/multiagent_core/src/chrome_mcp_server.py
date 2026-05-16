@@ -167,6 +167,11 @@ def error_result(message):
     return {"content": [{"type": "text", "text": str(message)}], "isError": True}
 
 
+def is_uncertain_bridge_response(exc):
+    message = str(exc)
+    return isinstance(exc, TimeoutError) or "empty response" in message or "Timed out waiting" in message
+
+
 def require_tab(params):
     tab_id = params.get("tabId")
     if not isinstance(tab_id, int):
@@ -387,7 +392,18 @@ def tool_navigate(params):
 
 def tool_claim_tab(params):
     tab_id = require_tab(params)
-    result = chrome_request("claimUserTab", {"tabId": tab_id})
+    try:
+        result = chrome_request("claimUserTab", {"tabId": tab_id})
+    except Exception as exc:
+        if not is_uncertain_bridge_response(exc):
+            raise
+        LIFECYCLE.emit("tab:claim-timeout", str(exc), {"tabId": tab_id})
+        return {
+            "tabId": tab_id,
+            "claimed": None,
+            "timedOut": True,
+            "message": "The extension did not return a claim response before the bridge timeout.",
+        }
     LIFECYCLE.emit("tab:claimed", data={"tabId": tab_id})
     return result or {"tabId": tab_id, "claimed": True}
 
@@ -398,18 +414,35 @@ def tool_group_tabs(params):
     if title is not None and not isinstance(title, str):
         raise ValueError("title must be a string")
     claimed = []
+    warnings = []
     for tab_id in tab_ids:
-        chrome_request("claimUserTab", {"tabId": tab_id})
+        try:
+            chrome_request("claimUserTab", {"tabId": tab_id})
+        except Exception as exc:
+            if not is_uncertain_bridge_response(exc):
+                raise
+            warnings.append(f"claimUserTab({tab_id}) returned uncertain response: {exc}")
         claimed.append(tab_id)
     if title and title.strip():
-        chrome_request("nameSession", {"name": title.strip()})
-    tabs = chrome_request("getTabs", {})
-    LIFECYCLE.emit("tabs:grouped", data={"tabIds": claimed, "title": title})
+        try:
+            chrome_request("nameSession", {"name": title.strip()})
+        except Exception as exc:
+            if not is_uncertain_bridge_response(exc):
+                raise
+            warnings.append(f"nameSession returned uncertain response: {exc}")
+    tabs = tool_get_tabs({})
+    grouped = [
+        tab for tab in tabs
+        if tab.get("id") in claimed and (not title or tab.get("tabGroup") == title.strip())
+    ] if isinstance(tabs, list) else []
+    LIFECYCLE.emit("tabs:grouped", data={"tabIds": claimed, "title": title, "warnings": warnings})
     return {
         "sessionId": SESSION_ID,
         "claimedTabIds": claimed,
         "title": title,
         "tabs": tabs,
+        "verifiedGroupedTabIds": [tab.get("id") for tab in grouped],
+        "warnings": warnings,
         "note": "Tabs were moved into the extension-managed Chrome session tab group.",
     }
 
@@ -429,10 +462,24 @@ def tool_finalize_tabs(params):
         if status not in {"handoff", "deliverable"}:
             raise ValueError("keep status must be handoff or deliverable")
         normalized.append({"tabId": tab_id, "status": status})
-    result = chrome_request("finalizeTabs", {"keep": normalized})
+    warnings = []
+    try:
+        result = chrome_request("finalizeTabs", {"keep": normalized})
+    except Exception as exc:
+        if not is_uncertain_bridge_response(exc):
+            raise
+        result = None
+        warnings.append(f"finalizeTabs returned uncertain response: {exc}")
     CDP.detach_all_best_effort()
-    LIFECYCLE.emit("tabs:finalized", data={"keep": normalized})
-    return result or {"finalized": True, "keep": normalized}
+    tabs = tool_get_tabs({})
+    LIFECYCLE.emit("tabs:finalized", data={"keep": normalized, "warnings": warnings})
+    return result or {
+        "finalized": not warnings,
+        "finalizedUnknown": bool(warnings),
+        "keep": normalized,
+        "tabs": tabs,
+        "warnings": warnings,
+    }
 
 
 def tool_name_session(params):
@@ -962,6 +1009,71 @@ def tool_lifecycle_events(params):
     }
 
 
+def tool_feature_status(_params):
+    return {
+        "serverName": SERVER_NAME,
+        "sessionId": SESSION_ID,
+        "enabledFeatures": sorted(FEATURES),
+        "capabilities": {
+            "tabs": {
+                "status": "supported" if feature_enabled("tabs") else "disabled",
+                "actions": ["claim_tab", "group_tabs", "name_session", "finalize_tabs", "release_tabs"],
+                "backend": "official-extension tab/session group APIs",
+                "notes": [
+                    "claim_tab rejects tabs already owned by a different extension session",
+                    "group_tabs uses Chrome tabGroups through the extension-managed session group",
+                ],
+            },
+            "history": {
+                "status": "supported" if feature_enabled("history") else "disabled",
+                "actions": ["history_search", "history_clear"],
+                "backend": "Chrome History API with read-only SQLite fallback",
+                "notes": [
+                    "visitCount filtering uses the local Chrome History database",
+                    "history_clear is destructive and requires MULTIAGENT_CHROME_ALLOW_HISTORY_MUTATION=1",
+                ],
+            },
+            "downloads": {
+                "status": "partial" if feature_enabled("downloads") else "disabled",
+                "actions": ["downloads_list", "download_start", "download_events", "download_action"],
+                "backend": "Chrome downloads notifications plus History downloads metadata",
+                "notes": [
+                    "download progress events are queued from onDownloadChange native notifications",
+                    "CDP supports Browser.cancelDownload when a download GUID and working CDP session are available",
+                    "Chrome CDP/native messaging does not expose a stable pause/resume command through the installed official extension",
+                ],
+            },
+            "cursor": {
+                "status": "partial" if feature_enabled("cursor") else "disabled",
+                "actions": ["move_mouse", "cursor_overlay", "cursor_stream", "cursor_events"],
+                "backend": "official extension cursor overlay plus optional CDP page event injection",
+                "notes": [
+                    "move_mouse returns a structured timeout instead of hanging if the extension content script does not answer",
+                    "cursor_stream and cursor_events require the centralized CDP session to attach successfully",
+                ],
+            },
+            "cdp": {
+                "status": "supported" if feature_enabled("cdp") else "disabled",
+                "actions": ["cdp_attach", "cdp_detach", "cdp_status", "cdp", "eval"],
+                "backend": "centralized CdpSessionManager",
+                "notes": [
+                    "commands use timeout and retry logic",
+                    "session state is reported as attached, detached, or crashed",
+                ],
+            },
+            "lifecycle": {
+                "status": "supported" if feature_enabled("lifecycle") else "disabled",
+                "actions": ["lifecycle_status", "lifecycle_events", "restart", "shutdown", "feature_status"],
+                "backend": "in-process lifecycle event ring buffer",
+                "notes": [
+                    "states are initializing, ready, active, idle, closing, and closed",
+                    "consumers poll lifecycle_events over MCP",
+                ],
+            },
+        },
+    }
+
+
 def tool_shutdown(params):
     keep = params.get("keep")
     LIFECYCLE.set_state("closing", "Graceful shutdown requested")
@@ -1006,6 +1118,7 @@ ACTION_HANDLERS = {
     "cdp_status": tool_cdp_status,
     "lifecycle_status": tool_lifecycle_status,
     "lifecycle_events": tool_lifecycle_events,
+    "feature_status": tool_feature_status,
     "shutdown": tool_shutdown,
     "restart": tool_restart,
 }
@@ -1037,6 +1150,7 @@ ACTION_FEATURES = {
     "cdp_status": "cdp",
     "lifecycle_status": "lifecycle",
     "lifecycle_events": "lifecycle",
+    "feature_status": "lifecycle",
     "shutdown": "lifecycle",
     "restart": "lifecycle",
 }
@@ -1168,6 +1282,7 @@ def build_tools():
         "lifecycle": {
             "chrome_lifecycle_status": make_tool("Read bridge lifecycle state.", tool_lifecycle_status, schema_for_action("lifecycle_status")),
             "chrome_lifecycle_events": make_tool("Poll bridge lifecycle events.", tool_lifecycle_events, schema_for_action("lifecycle_events")),
+            "chrome_feature_status": make_tool("Read a structured capability matrix for the Chrome bridge.", tool_feature_status, schema_for_action("feature_status")),
         },
     }
     for feature, feature_tools in optional_tools.items():
